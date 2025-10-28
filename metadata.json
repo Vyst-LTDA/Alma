@@ -1,0 +1,5 @@
+{
+  "name": "Alma",
+  "description": "Alma é um sistema de gerenciamento de almoxarifado educacional para cursos de logística, permitindo que docentes requisitem itens e a equipe do almoxarifado gerencie o estoque e as solicitações em tempo real.",
+  "requestFramePermissions": []
+}
