@@ -14,7 +14,7 @@ import {
     Legend,
     Cell
 } from 'recharts';
-import { ArrowUturnLeftIcon, CsvIcon, ExcelIcon, ChartPieIcon } from '../../../../components/shared/IconComponents';
+import { ArrowUturnLeftIcon, CsvIcon, ExcelIcon, ChartPieIcon, ChartLineIcon } from '../../../../components/shared/IconComponents';
 import { exportRequestsToCSV, exportRequestsToExcel } from '../../../../utils/export';
 
 interface CustomAnalyticsViewProps {
@@ -26,10 +26,12 @@ const COLORS = ['#4f46e5', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'
 const CustomAnalyticsView: React.FC<CustomAnalyticsViewProps> = ({ onBack }) => {
     const [dependentVar, setDependentVar] = useState('Itens que saíram de estoque');
     const [independentVar, setIndependentVar] = useState('Categoria de itens');
-    const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
+    const [chartType, setChartType] = useState<'bar' | 'pie' | 'line'>('bar');
     const [period, setPeriod] = useState('last-month');
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
+    const [customStartTime, setCustomStartTime] = useState('00:00');
+    const [customEndTime, setCustomEndTime] = useState('23:59');
 
     const [chartData, setChartData] = useState<any[]>([]);
     const [isGenerated, setIsGenerated] = useState(false);
@@ -101,6 +103,19 @@ const CustomAnalyticsView: React.FC<CustomAnalyticsViewProps> = ({ onBack }) => 
                         </PieChart>
                     </ResponsiveContainer>
                 );
+            case 'line':
+                return (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="value" stroke="#10b981" name={dependentVar} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                );
             default:
                 return null;
         }
@@ -145,9 +160,10 @@ const CustomAnalyticsView: React.FC<CustomAnalyticsViewProps> = ({ onBack }) => 
                         {/* Chart Type */}
                         <div>
                             <span className="block text-sm font-medium text-light-text mb-1">Tipo de Gráfico</span>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 <label className={`p-2 border rounded-lg cursor-pointer text-center text-sm ${chartType === 'bar' ? 'bg-dark-text text-white border-dark-text font-semibold' : 'hover:bg-gray-50'}`}><input type="radio" name="chartType" value="bar" checked={chartType === 'bar'} onChange={() => setChartType('bar')} className="sr-only" /> Barras</label>
                                 <label className={`p-2 border rounded-lg cursor-pointer text-center text-sm ${chartType === 'pie' ? 'bg-dark-text text-white border-dark-text font-semibold' : 'hover:bg-gray-50'}`}><input type="radio" name="chartType" value="pie" checked={chartType === 'pie'} onChange={() => setChartType('pie')} className="sr-only" /> Setores</label>
+                                <label className={`p-2 border rounded-lg cursor-pointer text-center text-sm ${chartType === 'line' ? 'bg-dark-text text-white border-dark-text font-semibold' : 'hover:bg-gray-50'}`}><input type="radio" name="chartType" value="line" checked={chartType === 'line'} onChange={() => setChartType('line')} className="sr-only" /> Linhas</label>
                             </div>
                         </div>
 
@@ -166,15 +182,21 @@ const CustomAnalyticsView: React.FC<CustomAnalyticsViewProps> = ({ onBack }) => 
                             </select>
                         </div>
                         {period === 'custom' && (
-                             <div className="space-y-2 p-3 bg-gray-50 rounded-lg border">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="space-y-2 p-3 bg-gray-50 rounded-lg border">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-xs font-medium text-light-text">Início</label>
-                                        <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} className="w-full text-sm p-1 bg-white text-black border border-gray-300 rounded"/>
+                                        <div className="flex items-center gap-1 mt-1">
+                                            <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} className="w-full text-sm p-1.5 bg-white text-black border border-gray-300 rounded"/>
+                                            <input type="time" value={customStartTime} onChange={e => setCustomStartTime(e.target.value)} className="w-auto text-sm p-1.5 bg-white text-black border border-gray-300 rounded"/>
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="text-xs font-medium text-light-text">Fim</label>
-                                        <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} className="w-full text-sm p-1 bg-white text-black border border-gray-300 rounded"/>
+                                        <div className="flex items-center gap-1 mt-1">
+                                            <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} className="w-full text-sm p-1.5 bg-white text-black border border-gray-300 rounded"/>
+                                            <input type="time" value={customEndTime} onChange={e => setCustomEndTime(e.target.value)} className="w-auto text-sm p-1.5 bg-white text-black border border-gray-300 rounded"/>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -36,7 +36,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             </div>
             
             <div className="text-center pt-4 text-xs text-light-text">
-                <p>Versão da API: <span className="font-mono bg-gray-100 p-1 rounded">Storia API v1.2.3 (Stable)</span></p>
+                <p>Versão da API: <span className="font-mono bg-gray-100 p-1 rounded text-dark-text">Storia API v1.2.3 (Stable)</span></p>
             </div>
         </div>
 
