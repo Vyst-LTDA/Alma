@@ -10,7 +10,8 @@ import ItemPopularityChart from '../analytics/ItemPopularityChart';
 import PeakRequestTimesChart from '../analytics/PeakRequestTimesChart';
 import RequestsByCategoryChart from '../analytics/RequestsByCategoryChart';
 import { UserRole } from '../../../types';
-import { allRequests, allEducationalRequests } from '../../../data/mockData';
+// FIX: Import stock items to calculate KPIs.
+import { allRequests, allEducationalRequests, mockStockItems, mockEducationalStockItems } from '../../../data/mockData';
 import InventoryTurnoverChart from '../components/InventoryTurnoverChart';
 
 
@@ -23,12 +24,27 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, onNavigate }) =
 
      const analyticsData = useMemo(() => {
         let requests = allRequests;
+        let stock;
         if (userRole === 'warehouse') {
             requests = allEducationalRequests;
+            stock = mockEducationalStockItems;
         } else if (userRole === 'professor') {
             // Hardcoded for 'Ana Pereira' as per professor dashboard context
             requests = allRequests.filter(r => r.requester === 'Ana Pereira');
+            stock = mockStockItems;
+        } else { // admin
+            requests = [...allRequests, ...allEducationalRequests];
+            stock = [...mockStockItems, ...mockEducationalStockItems];
         }
+        
+        // FIX: Calculate KPI data.
+        const totalRequests = requests.length;
+        const pendingRequests = requests.filter(r => r.status === 'Pendente').length;
+        const lowStockItems = stock.filter(item => item.status === 'Estoque Baixo').length;
+        const fulfilledRequests = requests.filter(r => r.status === 'Entregue').length;
+        const fulfillmentRate = totalRequests > 0 ? ((fulfilledRequests / totalRequests) * 100).toFixed(0) + '%' : 'N/A';
+        const kpiData = { totalRequests, pendingRequests, lowStockItems, fulfillmentRate };
+
 
         const itemPopularity = requests.reduce((acc, req) => {
             acc[req.item] = (acc[req.item] || 0) + req.quantity;
@@ -61,7 +77,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, onNavigate }) =
             { name: 'Mai', giro: 2.1 }, { name: 'Jun', giro: 2.5 },
         ];
         
-        return { itemPopularityData, peakTimesData, byCategoryData, turnoverData };
+        return { itemPopularityData, peakTimesData, byCategoryData, turnoverData, kpiData };
     }, [userRole]);
 
     const title = (userRole === 'professor' || userRole === 'warehouse') ? 'Minhas Análises' : 'Análises e BI';
@@ -95,7 +111,8 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, onNavigate }) =
                 </div>
                 
                 {/* KPIs */}
-                <AnalyticsKPIs userRole={userRole} />
+                {/* FIX: Pass 'kpiData' prop instead of 'userRole'. */}
+                <AnalyticsKPIs kpiData={analyticsData.kpiData} />
 
                 {/* Charts Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

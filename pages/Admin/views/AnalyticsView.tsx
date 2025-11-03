@@ -95,7 +95,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
                             </button>
                         </div>
                     )}
-                    {onNavigate && (
+                    {onNavigate && (userRole === 'admin' || userRole === 'professor') && (
                          <button 
                             onClick={() => onNavigate('custom-analytics')}
                             className="flex items-center bg-primary text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-primary/90 transition-all duration-300 transform hover:scale-105"

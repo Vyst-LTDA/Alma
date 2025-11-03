@@ -11,7 +11,7 @@ import AboutModal from '../../../components/shared/AboutModal';
 import CommunicationView from '../../../components/communication/CommunicationView';
 import AccountView from '../../Account/AccountView';
 import RequestsView from '../../Warehouse/views/RequestsView';
-import AnalyticsView from '../../Warehouse/views/AnalyticsView';
+import AnalyticsView from './AnalyticsView';
 import WarehouseDashboardContent from '../../Warehouse/views/WarehouseDashboardContent';
 import ServerManagementView from './ServerManagementView';
 import CustomAnalyticsView from './CustomAnalyticsView';
@@ -31,6 +31,8 @@ interface MainAdminDashboardProps {
 const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLogout, isEducationalMode, onToggleEducationalMode }) => {
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   const [userData, setUserData] = useState<UserData>({
     name: '',
@@ -42,6 +44,15 @@ const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLog
 
   const handleNavigate = (view: string) => {
     setCurrentView(view);
+  };
+
+  const handleAddNotification = (notification: any) => {
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadCount(prev => prev + 1);
+  };
+  
+  const handleOpenNotifications = () => {
+    setUnreadCount(0);
   };
 
   const renderContent = () => {
@@ -61,9 +72,9 @@ const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLog
       case 'stock':
         return <StockControlView userRole={userRole} />;
       case 'users':
-        return <UserManagementView manageableRoles={['professor']} />;
+        return <UserManagementView manageableRoles={['professor', 'admin']} />;
       case 'create-user':
-        return <CreateUserView onUserCreated={() => {}} creatableRoles={['professor']} />;
+        return <CreateUserView onUserCreated={handleAddNotification} creatableRoles={['professor', 'admin']} />;
       case 'suppliers':
         return <SuppliersView userRole={userRole} />;
       case 'losses':
@@ -90,9 +101,9 @@ const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLog
             userData={userData} 
             onLogout={onLogout}
             onNavigate={setCurrentView}
-            notifications={[]}
-            unreadCount={0}
-            onOpenNotifications={() => {}}
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onOpenNotifications={handleOpenNotifications}
         />
         <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
           {renderContent()}

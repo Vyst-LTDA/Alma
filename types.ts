@@ -90,3 +90,31 @@ export interface LossRecord {
     date: string;
     category?: string;
 }
+
+// Types from Swagger.json for Items
+export interface ItemDto {
+    id: string;
+    name: string;
+    sku: string;
+    stockQuantity: number;
+    createdAt: string;
+    updatedAt: string | null;
+    attributes: { [key: string]: any };
+}
+
+export interface CreateItemRequestDto {
+    name: string;
+    sku: string;
+    stockQuantity: number;
+    attributes?: { [key: string]: any };
+}
+
+export interface PagedResult<T> {
+    items: T[];
+    totalCount: number;
+    pageNumber: number;
+    pageSize: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+}

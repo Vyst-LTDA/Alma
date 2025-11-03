@@ -3,9 +3,9 @@
  * All rights reserved.
  *
 */
-import { Request, Contact, Supplier, StockItem, LossRecord } from '../types';
+import { Request, Contact, Supplier, StockItem, LossRecord, CreateItemRequestDto, ItemDto } from '../types';
 
-export const allRequests: Request[] = [
+export let allRequests: Request[] = [
     { id: 'REQ-001', item: 'Canetões (Caixa)', quantity: 2, requester: 'Ana Pereira', status: 'Entregue', requestDate: '15/06/2024', type: 'Uso Contínuo', category: 'Escritório', unit: 'CX' },
     { id: 'REQ-002', item: 'Projetor Multimídia', quantity: 1, requester: 'Carlos Souza', status: 'Aprovado', requestDate: '18/06/2024', type: 'Empréstimo', category: 'Eletrônicos', unit: 'UN', returnDate: '25/06/2024' },
     { id: 'REQ-003', item: 'Livro: Logística Reversa', quantity: 5, requester: 'Ana Pereira', status: 'Pendente', requestDate: '20/06/2024', type: 'Empréstimo', category: 'Material Didático', unit: 'UN', returnDate: '10/07/2024' },
@@ -36,13 +36,13 @@ export let mockUsers: Contact[] = [
     { id: 'admin_main', name: 'Usuário', avatar: '', role: 'admin', email: 'admin@instituicao.edu' },
 ];
 
-export const mockSuppliers: Supplier[] = [
+export let mockSuppliers: Supplier[] = [
     { id: 'sup1', name: 'Papelaria Central', cnpj: '11.111.111/0001-11', phone: '(11) 9999-1111', email: 'contato@papelariacentral.com', address: 'Rua das Papoulas, 123', category: 'Escritório' },
     { id: 'sup2', name: 'Tech Solutions', cnpj: '22.222.222/0001-22', phone: '(11) 9999-2222', email: 'vendas@techsolutions.com', address: 'Av. dos Projetores, 456', category: 'Eletrônicos' },
     { id: 'sup3', name: 'Didáticos & Cia', cnpj: '33.333.333/0001-33', phone: '(11) 9999-3333', email: 'contato@didaticos.com', address: 'Rua dos Livros, 789', category: 'Material Didático' },
 ];
 
-export const mockStockItems: StockItem[] = [
+export let mockStockItems: StockItem[] = [
     { id: '1', code: 'ITM-001', name: 'Canetões (Caixa)', category: 'Escritório', quantity: 50, status: 'Disponível' },
     { id: '2', code: 'ITM-002', name: 'Projetor Multimídia', category: 'Eletrônicos', quantity: 10, status: 'Disponível' },
     { id: '3', code: 'ITM-003', name: 'Livro: Logística Reversa', category: 'Material Didático', quantity: 5, status: 'Estoque Baixo' },
@@ -50,13 +50,13 @@ export const mockStockItems: StockItem[] = [
     { id: '5', code: 'ITM-005', name: 'Farinha de Trigo (5kg)', category: 'Alimentos', quantity: 0, status: 'Indisponível' },
 ];
 
-export const mockLossRecords: LossRecord[] = [
+export let mockLossRecords: LossRecord[] = [
     { id: 'LOSS-001', itemCode: 'ITM-001', itemName: 'Canetões (Caixa)', quantity: 1, report: 'Caixa danificada durante o transporte.', wasInStock: true, recordedBy: 'warehouse', date: '10/06/2024', category: 'Escritório' },
     { id: 'LOSS-002', itemCode: 'ITM-002', itemName: 'Projetor Multimídia', quantity: 1, report: 'Lâmpada queimou, sem conserto.', wasInStock: true, recordedBy: 'admin', date: '15/06/2024', category: 'Eletrônicos' },
     { id: 'LOSS-003', itemCode: 'ITM-003', itemName: 'Livro: Logística Reversa', quantity: 2, report: 'Páginas rasgadas por aluno.', wasInStock: false, recordedBy: 'professor', date: '20/06/2024', category: 'Material Didático' },
 ];
 
-export const mockMasterItems = [
+export let mockMasterItems = [
     { code: 'ITM-001', name: 'Canetões (Caixa)', category: 'Escritório' },
     { code: 'ITM-002', name: 'Projetor Multimídia', category: 'Eletrônicos' },
     { code: 'ITM-003', name: 'Livro: Logística Reversa', category: 'Material Didático' },
@@ -77,3 +77,71 @@ export const allEducationalRequests: Request[] = [
     { id: 'EDUREQ-001', item: 'Palete de Madeira PBR', quantity: 5, requester: 'Almoxarifado', status: 'Entregue', requestDate: '10/06/2024', type: 'Uso Contínuo', category: 'Logística', unit: 'UN' },
     { id: 'EDUREQ-002', item: 'Caixa de Papelão (50x50)', quantity: 50, requester: 'Almoxarifado', status: 'Pendente', requestDate: '20/06/2024', type: 'Uso Contínuo', category: 'Embalagem', unit: 'UN' },
 ];
+
+
+// --- API Simulation Service ---
+
+const apiDelay = 500;
+
+// GET /api/v1/Items
+export const getItemsApi = async (params: { pageNumber?: number, pageSize?: number, searchTerm?: string }): Promise<{ items: ItemDto[], totalCount: number }> => {
+    console.log('API_SIM: Fetching items with params:', params);
+    await new Promise(resolve => setTimeout(resolve, apiDelay));
+
+    let itemsToReturn = mockStockItems.map(item => ({ // mapping to ItemDto
+        id: item.id,
+        name: item.name,
+        sku: item.code,
+        stockQuantity: item.quantity,
+        createdAt: '2024-01-01T12:00:00Z', // mock date
+        updatedAt: null,
+        attributes: {
+            category: item.category,
+        }
+    }));
+
+    if (params.searchTerm) {
+        const term = params.searchTerm.toLowerCase();
+        itemsToReturn = itemsToReturn.filter(item => 
+            item.name.toLowerCase().includes(term) ||
+            item.sku.toLowerCase().includes(term) ||
+            (item.attributes.category && item.attributes.category.toLowerCase().includes(term))
+        );
+    }
+    
+    return {
+        items: itemsToReturn,
+        totalCount: itemsToReturn.length,
+    };
+};
+
+// POST /api/v1/Items
+export const createItemApi = async (itemData: CreateItemRequestDto): Promise<{ id: string }> => {
+    console.log('API_SIM: Creating item:', itemData);
+    await new Promise(resolve => setTimeout(resolve, apiDelay));
+
+    // Simulate validation error
+    if (mockStockItems.some(i => i.code === itemData.sku)) {
+        throw new Error(`SKU "${itemData.sku}" já existe.`);
+    }
+
+    const newStockItem: StockItem = {
+        id: `itm-${Date.now()}`,
+        code: itemData.sku,
+        name: itemData.name,
+        quantity: itemData.stockQuantity,
+        category: itemData.attributes?.category || 'Não categorizado',
+        status: itemData.stockQuantity > 10 ? 'Disponível' : itemData.stockQuantity > 0 ? 'Estoque Baixo' : 'Indisponível'
+    };
+    
+    const newMasterItem = {
+      code: newStockItem.code,
+      name: newStockItem.name,
+      category: newStockItem.category
+    };
+
+    mockStockItems.unshift(newStockItem);
+    mockMasterItems.unshift(newMasterItem);
+
+    return { id: newStockItem.id };
+};

@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { StockItem } from '../../../types';
+import { ItemDto } from '../../../types';
 import { SearchIcon, ArchiveIcon } from '../../../components/shared/IconComponents';
+import { getItemsApi } from '../../../data/mockData';
 
-const StockStatusBadge: React.FC<{ status: StockItem['status'] }> = ({ status }) => {
+type StockStatus = 'Disponível' | 'Estoque Baixo' | 'Indisponível';
+
+const getStockStatus = (quantity: number): StockStatus => {
+    if (quantity <= 0) return 'Indisponível';
+    if (quantity <= 10) return 'Estoque Baixo';
+    return 'Disponível';
+};
+
+const StockStatusBadge: React.FC<{ status: StockStatus }> = ({ status }) => {
     const baseClasses = 'px-3 py-1 text-xs font-semibold rounded-full inline-block';
     const statusClasses = {
         'Disponível': 'bg-green-100 text-green-700',
@@ -12,22 +21,37 @@ const StockStatusBadge: React.FC<{ status: StockItem['status'] }> = ({ status })
     return <span className={`${baseClasses} ${statusClasses[status]}`}>{status}</span>;
 };
 
-const StockItemsTable: React.FC = () => {
-    const [stockItems, setStockItems] = useState<StockItem[]>([]);
+const StockItemsTable: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
+    const [items, setItems] = useState<ItemDto[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        // TODO: Chamar API do backend para buscar itens em estoque.
-        // setStockItems(fetchedData);
-    }, []);
+        const fetchItems = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const result = await getItemsApi({ pageNumber: 1, pageSize: 200 });
+                setItems(result.items);
+            } catch (err) {
+                setError('Falha ao buscar itens do estoque.');
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchItems();
+    }, [refreshKey]);
 
     const filteredItems = useMemo(() => {
-        return stockItems.filter(item =>
+        return items.filter(item =>
             item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.category.toLowerCase().includes(searchTerm.toLowerCase())
+            item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.attributes.category && item.attributes.category.toLowerCase().includes(searchTerm.toLowerCase()))
         );
-    }, [stockItems, searchTerm]);
+    }, [items, searchTerm]);
 
     return (
         <div className="bg-light-card p-6 rounded-xl border border-gray-200 h-full flex flex-col">
@@ -45,40 +69,46 @@ const StockItemsTable: React.FC = () => {
             </div>
 
             <div className="flex-grow overflow-y-auto">
-                <table className="w-full text-sm text-left text-dark-text">
-                    <thead className="text-xs text-light-text uppercase bg-gray-50 sticky top-0">
-                        <tr>
-                            <th scope="col" className="px-6 py-3">Código</th>
-                            <th scope="col" className="px-6 py-3">Item</th>
-                            <th scope="col" className="px-6 py-3">Categoria</th>
-                            <th scope="col" className="px-6 py-3 text-center">Quantidade</th>
-                            <th scope="col" className="px-6 py-3 text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {filteredItems.length > 0 ? filteredItems.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-mono text-primary font-bold">{item.code}</td>
-                                <td className="px-6 py-4 font-semibold">{item.name}</td>
-                                <td className="px-6 py-4">{item.category}</td>
-                                <td className="px-6 py-4 text-center font-semibold">{item.quantity}</td>
-                                <td className="px-6 py-4 text-center">
-                                    <StockStatusBadge status={item.status} />
-                                </td>
+                {loading ? (
+                    <div className="flex items-center justify-center h-full text-light-text">Carregando itens...</div>
+                ) : error ? (
+                    <div className="flex items-center justify-center h-full text-red-500">{error}</div>
+                ) : (
+                    <table className="w-full text-sm text-left text-dark-text">
+                        <thead className="text-xs text-light-text uppercase bg-gray-50 sticky top-0">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">Código</th>
+                                <th scope="col" className="px-6 py-3">Item</th>
+                                <th scope="col" className="px-6 py-3">Categoria</th>
+                                <th scope="col" className="px-6 py-3 text-center">Quantidade</th>
+                                <th scope="col" className="px-6 py-3 text-center">Status</th>
                             </tr>
-                        )) : (
-                           <tr>
-                                <td colSpan={5}>
-                                    <div className="flex flex-col items-center justify-center text-center text-light-text py-16">
-                                        <ArchiveIcon className="w-16 h-16 text-gray-300 mb-4" />
-                                        <h3 className="font-semibold text-dark-text">Nenhum item em estoque</h3>
-                                        <p>Itens registrados e com entradas aparecerão aqui.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {filteredItems.length > 0 ? filteredItems.map((item) => (
+                                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 font-mono text-primary font-bold">{item.sku}</td>
+                                    <td className="px-6 py-4 font-semibold">{item.name}</td>
+                                    <td className="px-6 py-4">{item.attributes.category || '--'}</td>
+                                    <td className="px-6 py-4 text-center font-semibold">{item.stockQuantity}</td>
+                                    <td className="px-6 py-4 text-center">
+                                        <StockStatusBadge status={getStockStatus(item.stockQuantity)} />
+                                    </td>
+                                </tr>
+                            )) : (
+                               <tr>
+                                    <td colSpan={5}>
+                                        <div className="flex flex-col items-center justify-center text-center text-light-text py-16">
+                                            <ArchiveIcon className="w-16 h-16 text-gray-300 mb-4" />
+                                            <h3 className="font-semibold text-dark-text">Nenhum item em estoque</h3>
+                                            <p>Nenhum item encontrado. Tente registrar um novo item.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );

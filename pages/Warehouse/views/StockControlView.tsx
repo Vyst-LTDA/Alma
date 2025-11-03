@@ -69,10 +69,15 @@ interface StockControlViewProps {
 const StockControlView: React.FC<StockControlViewProps> = ({ userRole }) => {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
     const [currentSubView, setCurrentSubView] = useState<'main' | 'entries'>('main');
+    const [refreshKey, setRefreshKey] = useState(0);
 
     if (currentSubView === 'entries') {
         return <StockEntriesView userRole={userRole} onBack={() => setCurrentSubView('main')} />;
     }
+    
+    const handleItemRegistered = () => {
+      setRefreshKey(prev => prev + 1);
+    };
 
     return (
         <div className="h-full flex flex-col">
@@ -99,10 +104,10 @@ const StockControlView: React.FC<StockControlViewProps> = ({ userRole }) => {
             </div>
             
             <div className="flex-grow">
-                <StockItemsTable />
+                <StockItemsTable refreshKey={refreshKey} />
             </div>
 
-            {isRegisterModalOpen && <RegisterItemForm isOpen={isRegisterModalOpen} onClose={() => setIsRegisterModalOpen(false)} />}
+            {isRegisterModalOpen && <RegisterItemForm isOpen={isRegisterModalOpen} onClose={() => setIsRegisterModalOpen(false)} onItemRegistered={handleItemRegistered} />}
         </div>
     );
 }
