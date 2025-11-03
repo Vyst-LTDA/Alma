@@ -14,8 +14,8 @@ import {
     Legend,
     Cell
 } from 'recharts';
-import { ArrowUturnLeftIcon, CsvIcon, ExcelIcon, ChartPieIcon, ChartLineIcon } from '../../../../components/shared/IconComponents';
-import { exportRequestsToCSV, exportRequestsToExcel } from '../../../../utils/export';
+import { ArrowUturnLeftIcon, CsvIcon, ExcelIcon, ChartPieIcon, ChartLineIcon } from '../../../components/shared/IconComponents';
+import { exportRequestsToCSV, exportRequestsToExcel } from '../../../utils/export';
 
 interface CustomAnalyticsViewProps {
     onBack: () => void;

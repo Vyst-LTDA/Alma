@@ -3,14 +3,14 @@
  * All rights reserved.
  *
 */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChartPieIcon } from '../../../components/shared/IconComponents';
 import AnalyticsKPIs from '../analytics/AnalyticsKPIs';
-import { UserRole, UserData } from '../../../types';
-import { allRequests, allEducationalRequests, mockLossRecords, mockStockItems, mockEducationalStockItems } from '../../../data/mockData';
+import { UserRole, UserData, ItemDto, MovementDto } from '../../../types';
 import DynamicChart from '../../../components/shared/DynamicChart';
 import ChartContainer from '../../../components/shared/ChartContainer';
 import { generalAnalyticsCharts, myAnalyticsCharts } from '../../../data/mockCharts';
+import { getItems, getMovements, getMovementsByUser } from '../../../services/apiService';
 
 interface AnalyticsViewProps {
     userRole: UserRole;
@@ -21,55 +21,119 @@ interface AnalyticsViewProps {
 const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNavigate }) => {
     const isProfessor = userRole === 'professor';
     const [scope, setScope] = useState<'my' | 'general'>(isProfessor ? 'my' : 'general');
+    
+    const [items, setItems] = useState<ItemDto[]>([]);
+    const [movements, setMovements] = useState<MovementDto[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const itemsPromise = getItems({ pageSize: 1000 });
+                
+                const movementsPromise = (userRole === 'professor' && userData.id) 
+                    ? getMovementsByUser(userData.id) 
+                    : getMovements({ pageSize: 1000 });
+
+                const [itemsResult, movementsData] = await Promise.all([itemsPromise, movementsPromise]);
+                
+                setItems(itemsResult.items || []);
+                setMovements(Array.isArray(movementsData) ? movementsData : (movementsData.items || []));
+
+            } catch (err: any) {
+                setError('Falha ao carregar dados de análise.');
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [userRole, userData.id]);
 
     const analyticsData = useMemo(() => {
-        let baseRequests;
-        let baseStock;
-        let baseLosses = mockLossRecords;
+        const itemCategoryMap = new Map(items.map(i => [i.id, i.attributes?.category || 'Não categorizado']));
 
-        if (userRole === 'warehouse') {
-            baseRequests = allEducationalRequests;
-            baseStock = mockEducationalStockItems;
-        } else if (userRole === 'admin') {
-            baseRequests = [...allRequests, ...allEducationalRequests];
-            baseStock = [...mockStockItems, ...mockEducationalStockItems];
-        } else { // professor
-            baseRequests = allRequests;
-            baseStock = mockStockItems;
+        let processedMovements = movements;
+        if (userRole === 'warehouse' && scope === 'my' && userData.name) {
+            // Filter movements made by the current warehouse user
+            processedMovements = movements.filter(m => m.userFullName === userData.name);
         }
 
-        let requests = baseRequests;
-        let stock = baseStock;
-        let losses = baseLosses;
-
-        if (scope === 'my') {
-            requests = baseRequests.filter(r => r.requester === userData.name);
-            losses = baseLosses.filter(l => l.recordedBy === userRole);
-            if (userRole === 'admin' || userRole === 'professor') {
-                stock = mockStockItems;
-            }
-        }
+        const totalRequests = processedMovements.length;
+        const lowStockItems = items.filter(item => item.stockQuantity > 0 && item.stockQuantity <= 10).length;
+        // In the API, a movement is a completed action, so fulfillment is 100% of recorded movements.
+        const fulfillmentRate = totalRequests > 0 ? '100%' : 'N/A';
+        // The API does not have a "pending" status for movements.
+        const kpiData = { totalRequests, pendingRequests: 0, lowStockItems, fulfillmentRate };
         
-        const totalRequests = requests.length;
-        const pendingRequests = requests.filter(r => r.status === 'Pendente').length;
-        const lowStockItems = stock.filter(item => item.status === 'Estoque Baixo').length;
-        const fulfilledRequests = requests.filter(r => r.status === 'Entregue').length;
-        const fulfillmentRate = totalRequests > 0 ? ((fulfilledRequests / totalRequests) * 100).toFixed(0) + '%' : 'N/A';
-        const kpiData = { totalRequests, pendingRequests, lowStockItems, fulfillmentRate };
-        
-        return { kpiData };
+        const chartsData = {
+             itemPopularityData: Object.entries(processedMovements.reduce((acc, mov) => {
+                if (mov.type === 'CheckOut' && mov.itemName) {
+                    acc[mov.itemName] = (acc[mov.itemName] || 0) + mov.quantity;
+                }
+                return acc;
+            }, {} as Record<string, number>))
+            .sort(([,a],[,b]) => b - a).slice(0, 7)
+            .map(([name, quantity]) => ({ name, requisições: quantity })),
 
-    }, [userRole, scope, userData.name]);
+            peakTimesData: Object.entries(processedMovements.reduce((acc, mov) => {
+                const day = new Date(mov.movementDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit'});
+                acc[day] = (acc[day] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>))
+            .map(([name, value]) => ({ name, [scope === 'my' ? 'requisições' : 'entradas']: value }))
+            .slice(-30),
+
+            byCategoryData: Object.entries(processedMovements.reduce((acc, mov) => {
+                const category = itemCategoryMap.get(mov.itemId) || 'Não categorizado';
+                acc[category] = (acc[category] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>)).map(([name, value]) => ({ name, value })),
+            
+            // Turnover is complex and cannot be calculated from API data. Keep mock.
+            turnoverData: [
+                { name: 'Jan', giro: 1.2 }, { name: 'Fev', giro: 1.5 },
+                { name: 'Mar', giro: 1.4 }, { name: 'Abr', giro: 1.8 },
+                { name: 'Mai', giro: 2.1 }, { name: 'Jun', giro: 2.5 },
+            ],
+        };
+
+        return { kpiData, chartsData };
+
+    }, [userRole, scope, userData.name, items, movements]);
     
     const chartsToDisplay = useMemo(() => {
-        if (scope === 'my') return myAnalyticsCharts;
-        return generalAnalyticsCharts;
-    }, [scope, userRole]);
+        if (!analyticsData.chartsData) return [];
+        
+        const { itemPopularityData, peakTimesData, byCategoryData } = analyticsData.chartsData;
+        const baseCharts = scope === 'my' ? myAnalyticsCharts : generalAnalyticsCharts;
+        
+        // Create new chart configs with live data to avoid mutating the imported mock data.
+        return baseCharts.map(chartConfig => {
+            const newConfig = {...chartConfig};
+            if (chartConfig.id.includes('1')) newConfig.data = byCategoryData;
+            if (chartConfig.id.includes('2')) newConfig.data = itemPopularityData;
+            if (chartConfig.id.includes('3')) newConfig.data = peakTimesData;
+            return newConfig;
+        });
+        
+    }, [scope, userRole, analyticsData]);
 
     const title = scope === 'my' ? 'Minhas Análises' : 'Análises e BI';
     const subtitle = scope === 'my'
         ? 'Explore os dados e métricas de suas atividades no almoxarifado.' 
         : 'Explore os dados e métricas do almoxarifado.';
+    
+    if (loading) {
+        return <div className="flex items-center justify-center h-full">Carregando dados de análise...</div>;
+    }
+
+    if (error) {
+        return <div className="flex items-center justify-center h-full text-red-500">{error}</div>;
+    }
 
     return (
         <div className="h-full flex flex-col gap-8">
@@ -101,7 +165,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
                             className="flex items-center bg-primary text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-primary/90 transition-all duration-300 transform hover:scale-105"
                         >
                             <ChartPieIcon className="w-5 h-5 mr-2" />
-                            Gerar Gráfico Personalizado
+                            Gerar Gráfico
                         </button>
                     )}
                 </div>

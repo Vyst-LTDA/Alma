@@ -3,14 +3,14 @@
  * All rights reserved.
  *
 */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChartPieIcon } from '../../../components/shared/IconComponents';
 import AnalyticsKPIs from '../../Warehouse/analytics/AnalyticsKPIs';
-import { UserRole, UserData } from '../../../types';
-import { allRequests, allEducationalRequests, mockLossRecords, mockStockItems, mockEducationalStockItems } from '../../../data/mockData';
+import { UserRole, UserData, ItemDto, MovementDto } from '../../../types';
 import DynamicChart from '../../../components/shared/DynamicChart';
 import ChartContainer from '../../../components/shared/ChartContainer';
 import { generalAnalyticsCharts, myAnalyticsCharts } from '../../../data/mockCharts';
+import { getItems, getMovements } from '../../../services/apiService';
 
 interface AnalyticsViewProps {
     userRole: UserRole;
@@ -22,54 +22,105 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
     const isProfessor = userRole === 'professor';
     const [scope, setScope] = useState<'my' | 'general'>(isProfessor ? 'my' : 'general');
 
-    const analyticsData = useMemo(() => {
-        let baseRequests;
-        let baseStock;
-        let baseLosses = mockLossRecords;
+    const [items, setItems] = useState<ItemDto[]>([]);
+    const [movements, setMovements] = useState<MovementDto[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-        if (userRole === 'warehouse') {
-            baseRequests = allEducationalRequests;
-            baseStock = mockEducationalStockItems;
-        } else if (userRole === 'admin') {
-            baseRequests = [...allRequests, ...allEducationalRequests];
-            baseStock = [...mockStockItems, ...mockEducationalStockItems];
-        } else { // professor
-            baseRequests = allRequests;
-            baseStock = mockStockItems;
-        }
-
-        let requests = baseRequests;
-        let stock = baseStock;
-        let losses = baseLosses;
-
-        if (scope === 'my') {
-            requests = baseRequests.filter(r => r.requester === userData.name);
-            losses = baseLosses.filter(l => l.recordedBy === userRole);
-            if (userRole === 'admin' || userRole === 'professor') {
-                stock = mockStockItems;
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const itemsPromise = getItems({ pageSize: 1000 });
+                const movementsPromise = getMovements({ pageSize: 1000 });
+                const [itemsResult, movementsResult] = await Promise.all([itemsPromise, movementsPromise]);
+                setItems(itemsResult.items || []);
+                setMovements(movementsResult.items || []);
+            } catch (err: any) {
+                setError('Falha ao carregar dados de análise.');
+                console.error(err);
+            } finally {
+                setLoading(false);
             }
-        }
-        
-        const totalRequests = requests.length;
-        const pendingRequests = requests.filter(r => r.status === 'Pendente').length;
-        const lowStockItems = stock.filter(item => item.status === 'Estoque Baixo').length;
-        const fulfilledRequests = requests.filter(r => r.status === 'Entregue').length;
-        const fulfillmentRate = totalRequests > 0 ? ((fulfilledRequests / totalRequests) * 100).toFixed(0) + '%' : 'N/A';
-        const kpiData = { totalRequests, pendingRequests, lowStockItems, fulfillmentRate };
-        
-        return { kpiData };
+        };
+        fetchData();
+    }, []);
 
-    }, [userRole, scope, userData.name]);
+    const analyticsData = useMemo(() => {
+        const itemCategoryMap = new Map(items.map(i => [i.id, i.attributes?.category || 'Não categorizado']));
+
+        let processedMovements = movements;
+        if (scope === 'my' && userData.name) {
+            processedMovements = movements.filter(m => m.userFullName === userData.name);
+        }
+
+        const totalRequests = processedMovements.length;
+        const lowStockItems = items.filter(item => item.stockQuantity > 0 && item.stockQuantity <= 10).length;
+        const fulfillmentRate = totalRequests > 0 ? '100%' : 'N/A';
+        const kpiData = { totalRequests, pendingRequests: 0, lowStockItems, fulfillmentRate };
+        
+        const chartsData = {
+             itemPopularityData: Object.entries(processedMovements.reduce((acc, mov) => {
+                if (mov.type === 'CheckOut' && mov.itemName) {
+                    acc[mov.itemName] = (acc[mov.itemName] || 0) + mov.quantity;
+                }
+                return acc;
+            }, {} as Record<string, number>))
+            .sort(([,a],[,b]) => b - a).slice(0, 7)
+            .map(([name, quantity]) => ({ name, requisições: quantity })),
+
+            peakTimesData: Object.entries(processedMovements.reduce((acc, mov) => {
+                const day = new Date(mov.movementDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit'});
+                acc[day] = (acc[day] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>))
+            .map(([name, value]) => ({ name, [scope === 'my' ? 'requisições' : 'entradas']: value }))
+            .slice(-30),
+
+            byCategoryData: Object.entries(processedMovements.reduce((acc, mov) => {
+                const category = itemCategoryMap.get(mov.itemId) || 'Não categorizado';
+                acc[category] = (acc[category] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>)).map(([name, value]) => ({ name, value })),
+        };
+
+        return { kpiData, chartsData };
+
+    }, [scope, userData.name, items, movements]);
     
     const chartsToDisplay = useMemo(() => {
-        if (scope === 'my') return myAnalyticsCharts;
-        return generalAnalyticsCharts;
-    }, [scope, userRole]);
+        if (!analyticsData.chartsData) return [];
+
+        const { itemPopularityData, peakTimesData, byCategoryData } = analyticsData.chartsData;
+        const baseCharts = scope === 'my' ? myAnalyticsCharts : generalAnalyticsCharts;
+        
+        return baseCharts.map(chartConfig => {
+            const newConfig = {...chartConfig};
+            if (chartConfig.id.includes('1') || chartConfig.type === 'pie') {
+                newConfig.data = byCategoryData;
+            } else if (chartConfig.id.includes('2') || chartConfig.type === 'bar' || chartConfig.type === 'verticalBar') {
+                 newConfig.data = itemPopularityData;
+            } else if (chartConfig.id.includes('3') || chartConfig.type === 'line' || chartConfig.type === 'area') {
+                newConfig.data = peakTimesData;
+            }
+            return newConfig;
+        });
+
+    }, [scope, userRole, analyticsData]);
 
     const title = scope === 'my' ? 'Minhas Análises' : 'Análises e BI';
     const subtitle = scope === 'my'
         ? 'Explore os dados e métricas de suas atividades no almoxarifado.' 
         : 'Explore os dados e métricas do almoxarifado.';
+
+    if (loading) {
+        return <div className="flex items-center justify-center h-full">Carregando dados de análise...</div>;
+    }
+
+    if (error) {
+        return <div className="flex items-center justify-center h-full text-red-500">{error}</div>;
+    }
 
     return (
         <div className="h-full flex flex-col gap-8">
