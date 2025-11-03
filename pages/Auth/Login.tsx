@@ -91,30 +91,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         </button>
                     </form>
                     
-                    {/* Test Mode Section */}
-                    <div className="text-center">
-                        <div className="relative my-4">
-                           <div className="absolute inset-0 flex items-center">
-                               <div className="w-full border-t border-white/20"></div>
-                           </div>
-                           <div className="relative flex justify-center text-sm">
-                               <span className="px-2 bg-black/20 backdrop-blur-sm text-white/80 rounded-full">Modo de Teste</span>
-                           </div>
-                        </div>
-                        <p className="text-sm text-white/80 mb-4">Acesse rapidamente usando um perfil pré-definido.</p>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <button onClick={() => onLogin('professor')} className="flex-1 text-sm bg-white/20 text-white font-bold py-2 px-4 rounded-lg hover:bg-white/30 transition">
-                                Docente
-                            </button>
-                             <button onClick={() => onLogin('warehouse')} className="flex-1 text-sm bg-white/20 text-white font-bold py-2 px-4 rounded-lg hover:bg-white/30 transition">
-                                Almoxarifado
-                            </button>
-                            <button onClick={() => onLogin('admin')} className="flex-1 text-sm bg-white/20 text-white font-bold py-2 px-4 rounded-lg hover:bg-white/30 transition">
-                                Administrador
-                            </button>
-                        </div>
-                    </div>
-
                      {/* Footer link */}
                     <div className="text-center text-xs text-white/60 pt-4">
                         <p>
