@@ -31,7 +31,9 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // FIX: Add id to userData to match UserData type.
   const [userData, setUserData] = useState<UserData>({
+    id: 'warehouse-placeholder-id',
     name: '',
     avatar: '',
     email: 'almoxarifado@instituicao.edu',
@@ -72,7 +74,8 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
               </button>
             </div>
             <div className="flex-grow mt-4">
-              <RequestsManagementTable requests={educationalRequests} />
+              {/* FIX: The 'requests' prop is not valid for this component. Using 'refreshKey' to trigger data refetches. */}
+              <RequestsManagementTable refreshKey={refreshKey} />
             </div>
           </div>
         );

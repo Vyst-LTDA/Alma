@@ -32,27 +32,22 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
   const [currentView, setCurrentView] = useState('dashboard');
   
   const [userData, setUserData] = useState<UserData>({
-    name: '',
-    avatar: '',
+    id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', // Example UUID for API calls
+    name: 'Ana Pereira',
+    avatar: 'https://i.pravatar.cc/150?u=ana-docente',
     email: 'ana.pereira@instituicao.edu',
     cpf: '444.555.666-77',
     linkedin: 'ana-docente'
   });
 
-  const [myRequests, setMyRequests] = useState<Request[]>([]);
-
-  useEffect(() => {
-    setMyRequests(allRequests.filter(r => r.requester === userData.name));
-  }, [userData.name]);
-
-
   const handleUpdateUserData = (newUserData: Partial<UserData>) => {
     setUserData(prev => ({ ...prev, ...newUserData }));
   };
 
-  const handleNewRequest = (newRequest: Request) => {
-    allRequests.unshift(newRequest);
-    setMyRequests(prev => [newRequest, ...prev]);
+  const handleNewRequest = () => {
+    // Navigate to the requests view to see the history update after a new request.
+    // The table itself will handle re-fetching.
+    setCurrentView('requests');
   };
 
   const renderContent = () => {
@@ -82,7 +77,7 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
                         Nova Requisição
                     </button>
                 </div>
-                <MyRequestsTable requests={myRequests} />
+                <MyRequestsTable userData={userData} />
             </>
         );
       case 'account':

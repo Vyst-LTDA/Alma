@@ -4,6 +4,7 @@ import React from 'react';
 export type UserRole = 'warehouse' | 'admin' | 'professor';
 
 export interface UserData {
+    id: string;
     name: string;
     avatar: string;
     email: string;
@@ -34,7 +35,7 @@ export interface Request {
     requester: string;
     status: 'Aprovado' | 'Pendente' | 'Recusado' | 'Entregue';
     requestDate: string;
-    type: 'Empréstimo' | 'Uso Contínuo';
+    type: 'Empréstimo' | 'Uso Contínuo' | 'Entrada';
     rejectionReason?: string; // Motivo da recusa
     unit?: string;
     deliveryMethod?: 'Retirada' | 'Entrega';
@@ -109,6 +110,7 @@ export interface CreateItemRequestDto {
     attributes?: { [key: string]: any };
 }
 
+// Generic Paged Result
 export interface PagedResult<T> {
     items: T[];
     totalCount: number;
@@ -117,4 +119,46 @@ export interface PagedResult<T> {
     totalPages: number;
     hasPreviousPage: boolean;
     hasNextPage: boolean;
+}
+
+// Types from Swagger.json for Users
+export interface UserDto {
+    id: string;
+    fullName: string | null;
+    email: string | null;
+    role: string | null;
+    isActive: boolean;
+    createdAt: string;
+}
+
+export interface RegisterUserRequestDto {
+    fullName: string;
+    email: string;
+    password?: string; // Password might be optional if confirmation is sent via email
+    role: string;
+}
+
+export type UserDtoPagedResult = PagedResult<UserDto>;
+
+// Types from Swagger.json for Movements
+export interface MovementDto {
+    id: string;
+    itemId: string;
+    itemName: string | null;
+    itemSku: string | null;
+    userId: string;
+    userFullName: string | null;
+    type: string | null; // "CheckIn" or "CheckOut"
+    quantity: number;
+    movementDate: string;
+    observations: string | null;
+}
+
+export type MovementDtoPagedResult = PagedResult<MovementDto>;
+
+export interface RegisterMovementRequestDto {
+    itemId: string;
+    userId: string;
+    quantity: number;
+    observations?: string | null;
 }

@@ -34,6 +34,8 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
 
   // FIX: Add mock userData to pass to the Header component.
   const [userData] = useState<UserData>({
+    // FIX: Add id to userData to match UserData type.
+    id: 'warehouse-dashboard-placeholder-id',
     name: 'Almoxarifado',
     avatar: 'https://i.pravatar.cc/150?u=warehouse',
     email: 'warehouse@example.com',

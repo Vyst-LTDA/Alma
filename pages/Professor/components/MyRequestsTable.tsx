@@ -3,10 +3,23 @@
  * All rights reserved.
  *
 */
-import React, { useState, useMemo } from 'react';
-import { Request } from '../../../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Request, UserData, MovementDto } from '../../../types';
 import StatusBadge from '../../../components/shared/StatusBadge';
 import { SearchIcon, DotsVerticalIcon } from '../../../components/shared/IconComponents';
+import { getMovementsByUser } from '../../../services/apiService';
+
+const mapMovementDtoToRequest = (dto: MovementDto): Request => ({
+    id: dto.id,
+    item: dto.itemName || 'N/A',
+    quantity: dto.quantity,
+    requester: dto.userFullName || 'N/A',
+    status: 'Entregue', // Assuming all movements are completed checkouts
+    requestDate: new Date(dto.movementDate).toLocaleDateString('pt-BR'),
+    type: dto.type === 'CheckOut' ? 'Uso Contínuo' : 'Entrada',
+    category: 'N/A', // This info isn't in MovementDto
+    unit: 'UN' // This info isn't in MovementDto
+});
 
 const ActionMenu: React.FC<{ request: Request }> = ({ request }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -28,12 +41,39 @@ const ActionMenu: React.FC<{ request: Request }> = ({ request }) => {
 }
 
 interface MyRequestsTableProps {
-    requests: Request[];
+    userData: UserData;
 }
 
-const MyRequestsTable: React.FC<MyRequestsTableProps> = ({ requests }) => {
+const MyRequestsTable: React.FC<MyRequestsTableProps> = ({ userData }) => {
+    const [requests, setRequests] = useState<Request[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<Request['status'] | 'Todos'>('Todos');
+
+    useEffect(() => {
+        const fetchRequests = async () => {
+            if (!userData.id) {
+                setError("ID do usuário não encontrado.");
+                setLoading(false);
+                return;
+            }
+            setLoading(true);
+            setError(null);
+            try {
+                const movements = await getMovementsByUser(userData.id);
+                // The endpoint returns all movements, so we filter for checkouts (user requests) client-side.
+                const userRequests = movements.filter(m => m.type === 'CheckOut').map(mapMovementDtoToRequest);
+                setRequests(userRequests);
+            } catch (err: any) {
+                setError(err.message || "Falha ao buscar requisições.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRequests();
+    }, [userData.id]);
 
     const filteredRequests = useMemo(() => {
         return requests.filter(req => {
@@ -64,10 +104,7 @@ const MyRequestsTable: React.FC<MyRequestsTableProps> = ({ requests }) => {
                         className="w-full md:w-48 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition bg-white text-black"
                     >
                         <option value="Todos">Todos os Status</option>
-                        <option value="Pendente">Pendente</option>
-                        <option value="Aprovado">Aprovado</option>
                         <option value="Entregue">Entregue</option>
-                        <option value="Recusado">Recusado</option>
                     </select>
                 </div>
             </div>
@@ -87,7 +124,9 @@ const MyRequestsTable: React.FC<MyRequestsTableProps> = ({ requests }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredRequests.length > 0 ? filteredRequests.map((req) => (
+                        {loading && <tr><td colSpan={7} className="text-center py-10 text-light-text">Carregando histórico...</td></tr>}
+                        {error && <tr><td colSpan={7} className="text-center py-10 text-red-500">{error}</td></tr>}
+                        {!loading && !error && (filteredRequests.length > 0 ? filteredRequests.map((req) => (
                             <tr key={req.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4 font-bold text-primary">{req.id}</td>
                                 <td className="px-6 py-4 font-semibold">{req.item}</td>
@@ -107,7 +146,7 @@ const MyRequestsTable: React.FC<MyRequestsTableProps> = ({ requests }) => {
                                     Nenhuma requisição encontrada.
                                 </td>
                             </tr>
-                        )}
+                        ))}
                     </tbody>
                 </table>
             </div>

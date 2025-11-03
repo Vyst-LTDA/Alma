@@ -18,10 +18,6 @@ const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack })
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const incomingRequests = useMemo(() => 
-        allRequests.filter(req => req.status === 'Pendente' || req.status === 'Aprovado'), 
-    [refreshKey]);
-    
     const handleEntryAdded = () => {
         setRefreshKey(prev => prev + 1);
     };
@@ -33,21 +29,21 @@ const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack })
                     <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors">
                         <ArrowUturnLeftIcon className="w-6 h-6 text-dark-text" />
                     </button>
-                    <h2 className="text-2xl font-bold text-dark-text">Gerenciar Entradas de Estoque</h2>
+                    <h2 className="text-2xl font-bold text-dark-text">Histórico de Entradas no Estoque</h2>
                 </div>
                 <button 
                     onClick={() => setIsAddEntryModalOpen(true)}
                     className="flex items-center bg-primary text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-primary/90 transition-all"
                 >
                     <PlusIcon className="w-5 h-5 mr-2" />
-                    Adicionar item ao estoque
+                    Adicionar Entrada
                 </button>
             </div>
             
             <div className="flex-grow mt-4">
                 <RequestsManagementTable 
-                    key={refreshKey}
-                    requests={incomingRequests} 
+                    refreshKey={refreshKey}
+                    movementType="CheckIn"
                 />
             </div>
             
@@ -89,7 +85,7 @@ const StockControlView: React.FC<StockControlViewProps> = ({ userRole }) => {
                         className="flex items-center bg-green-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition-all"
                     >
                         <ArchiveIcon className="w-5 h-5 mr-2" />
-                        Gerenciar Entrada de Itens
+                        Histórico de Entradas
                     </button>
                     {userRole === 'admin' && (
                         <button 

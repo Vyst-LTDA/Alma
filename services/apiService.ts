@@ -3,7 +3,7 @@
  * All rights reserved.
  *
 */
-import { CreateItemRequestDto, ItemDto, PagedResult } from '../types';
+import { CreateItemRequestDto, ItemDto, PagedResult, RegisterUserRequestDto, UserDto, UserDtoPagedResult, MovementDto, MovementDtoPagedResult, RegisterMovementRequestDto } from '../types';
 
 // The API is served from the same origin, so we use a relative path.
 const API_BASE_URL = ''; 
@@ -65,5 +65,86 @@ export const createItem = async (itemData: CreateItemRequestDto): Promise<any> =
     });
 
     // A non-ok response will be thrown by handleResponse
+    return handleResponse<any>(response);
+};
+
+/**
+ * Fetches a paginated list of users from the API.
+ * Corresponds to: GET /api/v1/Users
+ * @param params - The query parameters for pagination, searching, and sorting.
+ */
+export const getUsers = async (params: { 
+    pageNumber?: number, 
+    pageSize?: number, 
+    searchTerm?: string,
+    sortBy?: string,
+    sortOrder?: string 
+}): Promise<UserDtoPagedResult> => {
+    const query = new URLSearchParams();
+    if (params.pageNumber) query.append('PageNumber', params.pageNumber.toString());
+    if (params.pageSize) query.append('PageSize', params.pageSize.toString());
+    if (params.searchTerm) query.append('SearchTerm', params.searchTerm);
+    if (params.sortBy) query.append('SortBy', params.sortBy);
+    if (params.sortOrder) query.append('SortOrder', params.sortOrder);
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/Users?${query.toString()}`);
+    return handleResponse<UserDtoPagedResult>(response);
+};
+
+/**
+ * Creates a new user via the API.
+ * Corresponds to: POST /api/v1/Users
+ * @param userData - The data for the new user.
+ */
+export const createUser = async (userData: RegisterUserRequestDto): Promise<UserDto> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Users`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+    });
+    return handleResponse<UserDto>(response);
+};
+
+/**
+ * Fetches a paginated list of movements from the API.
+ * Corresponds to: GET /api/v1/Movements
+ */
+export const getMovements = async (params: { 
+    pageNumber?: number, 
+    pageSize?: number, 
+    searchTerm?: string 
+}): Promise<MovementDtoPagedResult> => {
+    const query = new URLSearchParams();
+    if (params.pageNumber) query.append('PageNumber', params.pageNumber.toString());
+    if (params.pageSize) query.append('PageSize', params.pageSize.toString());
+    if (params.searchTerm) query.append('SearchTerm', params.searchTerm);
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/Movements?${query.toString()}`);
+    return handleResponse<MovementDtoPagedResult>(response);
+};
+
+/**
+ * Fetches movements for a specific user.
+ * Corresponds to: GET /api/v1/Movements/by-user/{userId}
+ */
+export const getMovementsByUser = async (userId: string): Promise<MovementDto[]> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Movements/by-user/${userId}`);
+    return handleResponse<MovementDto[]>(response);
+};
+
+/**
+ * Registers a new checkout movement.
+ * Corresponds to: POST /api/v1/Movements/checkout
+ */
+export const createCheckoutMovement = async (movementData: RegisterMovementRequestDto): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Movements/checkout`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(movementData),
+    });
     return handleResponse<any>(response);
 };

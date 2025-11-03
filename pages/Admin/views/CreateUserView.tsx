@@ -4,8 +4,8 @@
  *
 */
 import React, { useState } from 'react';
-import { UserRole, Contact } from '../../../types';
-import { mockUsers } from '../../../data/mockData';
+import { UserRole, RegisterUserRequestDto } from '../../../types';
+import { createUser } from '../../../services/apiService';
 import { EyeIcon, EyeOffIcon, ArrowPathIcon, CheckCircleIcon, UserPlusIcon, InfoIcon } from '../../../components/shared/IconComponents';
 
 interface CreateUserViewProps {
@@ -14,12 +14,13 @@ interface CreateUserViewProps {
 }
 
 const CreateUserView: React.FC<CreateUserViewProps> = ({ onUserCreated, creatableRoles }) => {
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>(creatableRoles[0] || 'professor');
   const [showPassword, setShowPassword] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [error, setError] = useState<string | null>(null);
 
   const roleOptions: { [key in UserRole]?: string } = {
     professor: 'Docente',
@@ -36,20 +37,20 @@ const CreateUserView: React.FC<CreateUserViewProps> = ({ onUserCreated, creatabl
     setPassword(newPassword);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('sending');
+    setError(null);
 
-    setTimeout(() => {
-      const newUser: Contact = {
-        id: `user-${Date.now()}`,
-        name: name,
-        avatar: `https://i.pravatar.cc/150?u=${email}`,
-        role: role,
-        email: email,
-      };
-      // In a real app, this would be an API call
-      mockUsers.push(newUser);
+    const newUserRequest: RegisterUserRequestDto = {
+      fullName,
+      email,
+      password,
+      role,
+    };
+
+    try {
+      await createUser(newUserRequest);
       
       onUserCreated({
         id: Date.now(),
@@ -60,30 +61,19 @@ const CreateUserView: React.FC<CreateUserViewProps> = ({ onUserCreated, creatabl
 
       setStatus('sent');
 
-      // Simulate user response after a delay
-      setTimeout(() => {
-        const accepted = Math.random() > 0.2; // 80% chance of accepting
-        const responseText = accepted 
-          ? `${name} aceitou o convite e ativou a conta.`
-          : `${name} recusou o convite.`;
-        
-        onUserCreated({
-          id: Date.now() + 1,
-          icon: <InfoIcon className={`w-5 h-5 ${accepted ? 'text-green-500' : 'text-red-500'}`} />,
-          text: responseText,
-          time: "Agora"
-        });
-      }, 15000); // 15 seconds delay
-
-    }, 1500); // simulate network delay
+    } catch (err: any) {
+        setError(err.message || 'Falha ao criar usuário. Tente novamente.');
+        setStatus('error');
+    }
   };
 
   const resetForm = () => {
-    setName('');
+    setFullName('');
     setEmail('');
     setPassword('');
     setRole(creatableRoles[0] || 'professor');
     setStatus('idle');
+    setError(null);
   }
 
   if (status === 'sent') {
@@ -93,7 +83,7 @@ const CreateUserView: React.FC<CreateUserViewProps> = ({ onUserCreated, creatabl
             <div className="bg-light-card p-8 rounded-xl border border-gray-200 text-center">
                 <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-dark-text">Convite Enviado!</h3>
-                <p className="text-light-text mt-2 mb-6">O usuário {name} receberá um e-mail com as instruções para acessar o sistema. Você será notificado quando ele(a) confirmar o convite.</p>
+                <p className="text-light-text mt-2 mb-6">O usuário {fullName} receberá um e-mail com as instruções para acessar o sistema.</p>
                 <button onClick={resetForm} className="bg-primary text-white font-bold py-3 px-6 rounded-lg hover:bg-primary/90 transition-transform transform hover:scale-105">
                     Criar Outro Usuário
                 </button>
@@ -107,10 +97,15 @@ const CreateUserView: React.FC<CreateUserViewProps> = ({ onUserCreated, creatabl
       <h2 className="text-2xl font-bold text-dark-text mb-6">Criar Conta de Usuário</h2>
       <div className="bg-light-card p-8 rounded-xl border border-gray-200">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-100 border border-red-300 text-red-700 text-sm p-3 rounded-lg">
+              <strong>Erro:</strong> {error}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-dark-text mb-1">Nome Completo</label>
-              <input type="text" id="name" value={name} onChange={e => setName(e.target.value)} required className="w-full px-3 py-2 bg-white text-black border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" />
+              <input type="text" id="name" value={fullName} onChange={e => setFullName(e.target.value)} required className="w-full px-3 py-2 bg-white text-black border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" />
             </div>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-dark-text mb-1">E-mail Institucional</label>

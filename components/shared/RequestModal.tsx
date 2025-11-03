@@ -3,17 +3,16 @@
  * All rights reserved.
  *
 */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { SearchIcon, CheckCircleIcon } from './IconComponents';
-import { mockInventoryItems, allRequests } from '../../data/mockData';
-import { UserData, Request } from '../../types';
-import { generateDailyId } from '../../utils/idGenerator';
+import { UserData, Request, ItemDto, RegisterMovementRequestDto } from '../../types';
+import { getItems, createCheckoutMovement } from '../../services/apiService';
 
 interface RequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   userData: UserData;
-  onNewRequest: (request: Request) => void;
+  onNewRequest: (request?: Request) => void;
 }
 
 const Stepper: React.FC<{currentStep: number, steps: string[]}> = ({ currentStep, steps }) => (
@@ -40,6 +39,7 @@ const Stepper: React.FC<{currentStep: number, steps: string[]}> = ({ currentStep
 const RequestModal: React.FC<RequestModalProps> = ({ isOpen, onClose, userData, onNewRequest }) => {
   const [step, setStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
       itemId: null as string | null,
       quantity: 1,
@@ -50,13 +50,35 @@ const RequestModal: React.FC<RequestModalProps> = ({ isOpen, onClose, userData, 
   const [returnDate, setReturnDate] = useState('');
   const [itemSearch, setItemSearch] = useState('');
 
+  const [inventoryItems, setInventoryItems] = useState<ItemDto[]>([]);
+  const [loadingItems, setLoadingItems] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+        const fetchItems = async () => {
+            setLoadingItems(true);
+            try {
+                const result = await getItems({ pageSize: 500 }); // get all items
+                setInventoryItems(result.items);
+            } catch (error) {
+                console.error("Failed to fetch items", error);
+            } finally {
+                setLoadingItems(false);
+            }
+        };
+        fetchItems();
+    }
+  }, [isOpen]);
+
   const filteredItems = useMemo(() => {
-      return mockInventoryItems.filter(item => item.name.toLowerCase().includes(itemSearch.toLowerCase()));
-  }, [itemSearch]);
+      if (loadingItems) return [];
+      return inventoryItems.filter(item => item.name.toLowerCase().includes(itemSearch.toLowerCase()));
+  }, [itemSearch, inventoryItems, loadingItems]);
 
   const resetState = () => {
     setStep(1);
     setIsSuccess(false);
+    setIsSubmitting(false);
     setFormData({
       itemId: null,
       quantity: 1,
@@ -75,32 +97,33 @@ const RequestModal: React.FC<RequestModalProps> = ({ isOpen, onClose, userData, 
     onClose();
   }
   
-  const handleSubmit = () => {
-      const selectedMasterItem = mockInventoryItems.find(item => item.id === formData.itemId);
+  const handleSubmit = async () => {
+      const selectedMasterItem = inventoryItems.find(item => item.id === formData.itemId);
       if (!selectedMasterItem) {
         alert("Item inválido selecionado.");
         return;
       }
-
-      const newRequest: Request = {
-        id: generateDailyId('REQ', allRequests),
-        item: selectedMasterItem.name,
-        category: selectedMasterItem.category,
-        quantity: formData.quantity,
-        requester: userData.name,
-        status: 'Pendente',
-        requestDate: new Date().toLocaleDateString('pt-BR'),
-        type: requestType,
-        deliveryMethod: formData.deliveryMethod === 'Retirar no Almoxarifado' ? 'Retirada' : 'Entrega',
-        deliveryLocation: formData.deliveryMethod === 'Solicitar Entrega' ? formData.location : undefined,
-        returnDate: requestType === 'Empréstimo' ? returnDate : undefined,
+      
+      setIsSubmitting(true);
+      const movementRequest: RegisterMovementRequestDto = {
+          itemId: selectedMasterItem.id,
+          userId: userData.id,
+          quantity: formData.quantity,
+          observations: `Tipo: ${requestType}. ${requestType === 'Empréstimo' ? `Devolução: ${returnDate}.` : ''} Entrega: ${formData.deliveryMethod} ${formData.deliveryMethod === 'Solicitar Entrega' ? `em ${formData.location}` : ''}`
       };
 
-      onNewRequest(newRequest);
-      setIsSuccess(true);
+      try {
+        await createCheckoutMovement(movementRequest);
+        onNewRequest();
+        setIsSuccess(true);
+      } catch (err: any) {
+        alert(`Erro ao criar requisição: ${err.message}`);
+      } finally {
+        setIsSubmitting(false);
+      }
   }
 
-  const selectedItem = mockInventoryItems.find(item => item.id === formData.itemId);
+  const selectedItem = inventoryItems.find(item => item.id === formData.itemId);
 
   const renderContent = () => {
       if (isSuccess) {
@@ -108,7 +131,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ isOpen, onClose, userData, 
               <div className="text-center py-10">
                   <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
                   <h3 className="text-2xl font-bold text-dark-text">Requisição Enviada!</h3>
-                  <p className="text-light-text mt-2">Sua requisição foi enviada com sucesso e está aguardando aprovação.</p>
+                  <p className="text-light-text mt-2">Sua requisição foi registrada no histórico de movimentações.</p>
               </div>
           )
       }
@@ -121,15 +144,17 @@ const RequestModal: React.FC<RequestModalProps> = ({ isOpen, onClose, userData, 
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input type="text" placeholder="Pesquisar item..." value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} className="w-full pl-10 pr-3 py-2 bg-white text-black border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"/>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {filteredItems.map(item => (
-                    <button key={item.id} onClick={() => setFormData(f => ({ ...f, itemId: item.id }))} className={`relative p-4 border rounded-lg text-center transition-all ${formData.itemId === item.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'}`}>
-                    {formData.itemId === item.id && <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full text-white flex items-center justify-center text-xs">✓</div>}
-                    <img src={`https://picsum.photos/seed/${item.id}/200`} alt={item.name} className="w-24 h-24 object-cover mx-auto rounded-md mb-2" />
-                    <span className="text-sm font-semibold text-dark-text">{item.name}</span>
-                    </button>
-                ))}
-                </div>
+                {loadingItems ? <div className="text-center py-10">Carregando itens...</div> : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {filteredItems.map(item => (
+                            <button key={item.id} onClick={() => setFormData(f => ({ ...f, itemId: item.id }))} className={`relative p-4 border rounded-lg text-center transition-all ${formData.itemId === item.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'}`}>
+                            {formData.itemId === item.id && <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full text-white flex items-center justify-center text-xs">✓</div>}
+                            <img src={`https://picsum.photos/seed/${item.id}/200`} alt={item.name} className="w-24 h-24 object-cover mx-auto rounded-md mb-2" />
+                            <span className="text-sm font-semibold text-dark-text">{item.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
             );
         case 2: // Detalhes da Requisição
@@ -216,8 +241,8 @@ const RequestModal: React.FC<RequestModalProps> = ({ isOpen, onClose, userData, 
                 <button onClick={handleClose} className="text-sm font-semibold text-light-text hover:underline">Cancelar</button>
                 <div className="flex gap-4">
                     {step > 1 && <button onClick={() => setStep(s => s - 1)} className="px-6 py-2 bg-gray-200 text-dark-text font-semibold rounded-lg hover:bg-gray-300">Voltar</button>}
-                    {step < 4 && <button onClick={() => setStep(s => s + 1)} disabled={(step === 1 && !formData.itemId) || (step === 2 && requestType === 'Empréstimo' && !returnDate)} className="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed">Avançar</button>}
-                    {step === 4 && <button onClick={handleSubmit} className="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600">Finalizar Requisição</button>}
+                    {step < 4 && <button onClick={() => setStep(s => s + 1)} disabled={(step === 1 && !formData.itemId) || (step === 2 && requestType === 'Empréstimo' && !returnDate) || isSubmitting} className="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed">Avançar</button>}
+                    {step === 4 && <button onClick={handleSubmit} disabled={isSubmitting} className="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-wait">{isSubmitting ? 'Enviando...' : 'Finalizar Requisição'}</button>}
                 </div>
                 </>
             )}

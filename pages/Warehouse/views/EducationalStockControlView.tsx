@@ -48,9 +48,10 @@ const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack })
             </div>
             
             <div className="flex-grow mt-4">
+                {/* FIX: The 'requests' prop is not valid. The component fetches its own data. This has been replaced with 'movementType' to filter for stock entries, and 'refreshKey' is passed correctly. */}
                 <RequestsManagementTable 
-                    key={refreshKey}
-                    requests={incomingRequests} 
+                    refreshKey={refreshKey}
+                    movementType="CheckIn"
                 />
             </div>
             

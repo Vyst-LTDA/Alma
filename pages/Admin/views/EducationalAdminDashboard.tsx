@@ -34,7 +34,9 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   
+  // FIX: Add missing 'id' property to userData state to match UserData type.
   const [userData] = useState<UserData>({
+    id: 'admin-edu-placeholder',
     name: 'Admin (Educacional)',
     avatar: '',
     email: 'admin@instituicao.edu',
@@ -69,7 +71,8 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
           <div className="h-full flex flex-col">
             <h2 className="text-2xl font-bold text-dark-text mb-4">Requisições (Educacional)</h2>
             <div className="flex-grow">
-              <RequestsManagementTable requests={allEducationalRequests} />
+              {/* FIX: The 'requests' prop is not valid for this component because it fetches its own data. It has been removed. */}
+              <RequestsManagementTable />
             </div>
           </div>
         );

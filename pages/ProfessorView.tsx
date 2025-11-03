@@ -32,6 +32,8 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
 
   // FIX: Add mock userData to pass to the Header component.
   const [userData] = useState<UserData>({
+    // FIX: Add id to userData to match UserData type.
+    id: 'professor-placeholder-id',
     name: 'Professor',
     avatar: 'https://i.pravatar.cc/150?u=professor',
     email: 'professor@example.com',

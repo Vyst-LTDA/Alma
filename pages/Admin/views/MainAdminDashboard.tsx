@@ -34,7 +34,9 @@ const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLog
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   
+  // FIX: Add missing 'id' property to userData state to match UserData type.
   const [userData, setUserData] = useState<UserData>({
+    id: 'admin-main-placeholder',
     name: '',
     avatar: '',
     email: 'admin@instituicao.edu',

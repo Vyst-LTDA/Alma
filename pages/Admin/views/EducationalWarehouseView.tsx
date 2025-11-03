@@ -26,8 +26,8 @@ const EducationalWarehouseView: React.FC = () => {
             </p>
             
             <div className="flex-grow">
+                {/* FIX: The 'requests' prop is not valid for this component. It fetches its own data. This prop has been removed. */}
                 <RequestsManagementTable 
-                    requests={warehouseRequests} 
                 />
             </div>
         </div>
