@@ -3,14 +3,8 @@
  * All rights reserved.
  *
 */
-export interface ChartConfig {
-    id: string;
-    title: string;
-    type: 'bar' | 'pie' | 'line' | 'area' | 'verticalBar';
-    data: any[];
-    dataKey: string;
-    nameKey: string;
-}
+// FIX: Import ChartConfig from centralized types file
+import { ChartConfig } from '../types';
 
 const generateRandomData = (labels: string[], dataKey: string, nameKey: string) => {
     return labels.map(label => ({

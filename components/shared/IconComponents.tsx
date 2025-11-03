@@ -270,10 +270,16 @@ export const UserPlusIcon: React.FC<IconProps> = (props) => (
     </svg>
 );
 
+export const CQRSFlowIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3.75H19.5M8.25 3.75h.008v.008H8.25V3.75zM8.25 3.75v3.75m0 0H19.5m-11.25 0h.008v.008H8.25V7.5zM8.25 7.5v3.75m0 0H19.5m-11.25 0h.008v.008H8.25v-.008zM8.25 15v3.75m0 0H19.5m-11.25 0h.008v.008H8.25v-.008zM4.5 3.75h.008v.008H4.5V3.75zM4.5 7.5h.008v.008H4.5V7.5zM4.5 11.25h.008v.008H4.5v-.008zM4.5 15h.008v.008H4.5v-.008zM4.5 18.75h.008v.008H4.5v-.008z"/>
+    </svg>
+);
+
 
 // Alma Logo
 export const ERPLogo: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = (props) => (
-    <img src="components/icons/app-icon.jpg" alt="Alma Logo" {...props} />
+    <img src="/app-icon.jpg" alt="Alma Logo" {...props} />
 );
 
 

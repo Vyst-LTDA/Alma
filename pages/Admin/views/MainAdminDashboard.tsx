@@ -72,7 +72,7 @@ const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLog
       case 'custom-analytics':
         return <CustomAnalyticsView onBack={() => setCurrentView('analytics')} />;
       case 'stock':
-        return <StockControlView userRole={userRole} />;
+        return <StockControlView userRole={userRole} userData={userData} />;
       case 'users':
         return <UserManagementView manageableRoles={['professor', 'admin']} />;
       case 'create-user':

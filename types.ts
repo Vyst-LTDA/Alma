@@ -27,6 +27,16 @@ export interface StatCardType {
   icon: React.ReactNode;
 }
 
+// FIX: Add ChartConfig interface to be used across the application
+export interface ChartConfig {
+    id: string;
+    title: string;
+    type: 'bar' | 'pie' | 'line' | 'area' | 'verticalBar';
+    data: any[];
+    dataKey: string;
+    nameKey: string;
+}
+
 export interface Request {
     id: string;
     item: string;

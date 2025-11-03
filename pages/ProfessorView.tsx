@@ -9,7 +9,8 @@ import Header from '../components/layout/Header';
 // FIX: Import UserData type
 import { UserRole, UserData } from '../types';
 import MyRequestsTable from '../components/professor/MyRequestsTable';
-import { FileTextIcon } from '../components/icons/IconComponents';
+// FIX: Import path for IconComponents was incorrect.
+import { FileTextIcon } from '../components/shared/IconComponents';
 import RequestModal from '../components/professor/RequestModal';
 import AboutModal from '../components/shared/AboutModal';
 import CommunicationView from '../components/communication/CommunicationView';

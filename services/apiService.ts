@@ -148,3 +148,18 @@ export const createCheckoutMovement = async (movementData: RegisterMovementReque
     });
     return handleResponse<any>(response);
 };
+
+/**
+ * Registers a new checkin movement.
+ * Corresponds to: POST /api/v1/Movements/checkin
+ */
+export const createCheckinMovement = async (movementData: RegisterMovementRequestDto): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Movements/checkin`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(movementData),
+    });
+    return handleResponse<any>(response);
+};

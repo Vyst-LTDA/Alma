@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import RegisterItemForm from '../components/RegisterItemForm';
 import StockItemsTable from '../components/StockItemsTable';
 import { PlusIcon, ArchiveIcon, ArrowUturnLeftIcon } from '../../../components/shared/IconComponents';
-import { UserRole, Request } from '../../../types';
+import { UserRole, Request, UserData } from '../../../types';
 import RequestsManagementTable from '../components/RequestsManagementTable';
 import { allRequests } from '../../../data/mockData';
 import AddStockEntryModal from '../components/AddStockEntryModal';
@@ -12,9 +12,10 @@ import AddStockEntryModal from '../components/AddStockEntryModal';
 interface StockEntriesViewProps {
     userRole: UserRole;
     onBack: () => void;
+    userData: UserData;
 }
 
-const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack }) => {
+const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack, userData }) => {
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -52,6 +53,7 @@ const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack })
                 onClose={() => setIsAddEntryModalOpen(false)}
                 userRole={userRole}
                 onEntryAdded={handleEntryAdded}
+                userData={userData}
             />
         </div>
     )
@@ -60,15 +62,16 @@ const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack })
 
 interface StockControlViewProps {
     userRole: UserRole;
+    userData: UserData;
 }
 
-const StockControlView: React.FC<StockControlViewProps> = ({ userRole }) => {
+const StockControlView: React.FC<StockControlViewProps> = ({ userRole, userData }) => {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
     const [currentSubView, setCurrentSubView] = useState<'main' | 'entries'>('main');
     const [refreshKey, setRefreshKey] = useState(0);
 
     if (currentSubView === 'entries') {
-        return <StockEntriesView userRole={userRole} onBack={() => setCurrentSubView('main')} />;
+        return <StockEntriesView userRole={userRole} onBack={() => setCurrentSubView('main')} userData={userData} />;
     }
     
     const handleItemRegistered = () => {

@@ -1,6 +1,8 @@
 
+
 import React from 'react';
-import { DotsHorizontalIcon } from '../icons/IconComponents';
+// FIX: Import path for IconComponents was incorrect.
+import { DotsHorizontalIcon } from '../shared/IconComponents';
 
 interface ChartContainerProps {
     title: string;

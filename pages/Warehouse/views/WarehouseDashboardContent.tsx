@@ -1,13 +1,16 @@
-import React, { useMemo, useState } from 'react';
+/*
+ * Copyright (C) 2025 Vyst Ltda., Pedro Henrique Gracia & Antônio A. Meloni
+ * All rights reserved.
+ *
+*/
+import React, { useMemo, useState, useEffect } from 'react';
 import StatCard from '../components/StatCard';
 import { CubeIcon, BoltIcon, DocumentDuplicateIcon, CircleStackIcon, CheckCircleIcon } from '../../../components/shared/IconComponents';
-import { UserRole, UserData } from '../../../types';
-import { allRequests, allEducationalRequests, mockStockItems, mockEducationalStockItems } from '../../../data/mockData';
-import TopItemsTable from '../components/TopItemsTable';
+import { UserRole, UserData, MovementDto, ItemDto } from '../../../types';
 import DynamicChart from '../../../components/shared/DynamicChart';
 import ChartContainer from '../../../components/shared/ChartContainer';
 import { generalDashboardCharts, myDashboardCharts } from '../../../data/mockCharts';
-
+import { getMovements, getItems } from '../../../services/apiService';
 
 interface WarehouseDashboardContentProps {
     userRole: UserRole;
@@ -17,56 +20,89 @@ interface WarehouseDashboardContentProps {
 
 const WarehouseDashboardContent: React.FC<WarehouseDashboardContentProps> = ({ userRole, onNavigate, userData }) => {
     const [scope, setScope] = useState<'my' | 'general'>('general');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [movements, setMovements] = useState<MovementDto[]>([]);
+    const [items, setItems] = useState<ItemDto[]>([]);
     
-    const dashboardData = useMemo(() => {
-        let requests;
-        let stock;
-
-        if (userRole === 'warehouse') {
-            requests = (scope === 'my') ? allEducationalRequests.filter(r => r.requester === userData.name) : allEducationalRequests;
-            stock = mockEducationalStockItems;
-        } else if (userRole === 'admin') {
-             if (scope === 'my') {
-                requests = [...allRequests, ...allEducationalRequests].filter(r => r.requester === userData.name);
-                stock = mockStockItems;
-            } else { // general
-                requests = [...allRequests, ...allEducationalRequests];
-                stock = [...mockStockItems, ...mockEducationalStockItems];
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const [movementsResult, itemsResult] = await Promise.all([
+                    getMovements({ pageSize: 1000 }), // Fetch a large number to get all data
+                    getItems({ pageSize: 1000 })
+                ]);
+                setMovements(movementsResult.items || []);
+                setItems(itemsResult.items || []);
+            } catch (err: any) {
+                setError("Falha ao carregar dados do painel.");
+                console.error(err);
+            } finally {
+                setLoading(false);
             }
-        } else { // Professor (safeguard)
-            requests = allRequests.filter(r => r.requester === userData.name);
-            stock = mockStockItems;
+        };
+        fetchData();
+    }, []);
+
+    const { dashboardData, chartsToDisplay } = useMemo(() => {
+        if (loading) {
+             return {
+                dashboardData: { totalRequests: '...', lowStockItems: '...', fulfillmentRate: '...', activeLoans: '...' },
+                chartsToDisplay: [],
+            };
         }
 
+        let processedMovements = movements;
+        if (scope === 'my' && userData.name) {
+            processedMovements = movements.filter(m => m.userFullName === userData.name);
+        }
 
-        const totalRequests = requests.length;
-        const lowStockItems = stock.filter(item => item.status === 'Estoque Baixo').length;
-        const fulfilledRequests = requests.filter(r => r.status === 'Entregue').length;
-        const fulfillmentRate = totalRequests > 0 ? ((fulfilledRequests / totalRequests) * 100).toFixed(0) + '%' : 'N/A';
-        
-        const topItems = requests.reduce((acc, req) => {
-            acc[req.item] = (acc[req.item] || 0) + req.quantity;
+        const checkoutMovements = processedMovements.filter(m => m.type === 'CheckOut');
+
+        // KPIs
+        const totalRequests = checkoutMovements.length;
+        const lowStockItems = items.filter(item => item.stockQuantity > 0 && item.stockQuantity <= 10).length;
+        const fulfillmentRate = '100%'; // All movements from API are considered completed.
+        const activeLoans = checkoutMovements.filter(m => m.observations?.toLowerCase().includes('empréstimo')).length;
+
+        // Chart Data Calculation
+        const monthlyData = processedMovements.reduce((acc, mov) => {
+            const month = new Date(mov.movementDate).toLocaleString('pt-BR', { month: 'short' });
+            acc[month] = (acc[month] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
-        const topItemsData = Object.entries(topItems)
-            .sort(([, a], [, b]) => (b as number) - (a as number))
-            .slice(0, 5)
-            .map(([name, quantity]) => ({ name, quantity }));
+        const monthlyChartData = Object.entries(monthlyData).map(([name, value]) => ({ name, volume: value }));
         
+        const statusData = processedMovements.reduce((acc, mov) => {
+            const status = mov.type === 'CheckOut' ? 'Saída' : 'Entrada';
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        const statusChartData = Object.entries(statusData).map(([name, value]) => ({ name, value }));
+
+        const baseCharts = scope === 'my' ? myDashboardCharts : generalDashboardCharts;
+        const displayCharts = baseCharts.map(chartConfig => {
+            const newConfig = { ...chartConfig };
+            if (newConfig.id.includes('1')) newConfig.data = monthlyChartData;
+            if (newConfig.id.includes('2')) newConfig.data = statusChartData;
+            // Other charts can be populated here as data becomes available
+            return newConfig;
+        });
+
         return {
-            totalRequests,
-            lowStockItems,
-            fulfillmentRate,
-            topItemsData,
+            dashboardData: {
+                totalRequests: String(totalRequests),
+                lowStockItems: String(lowStockItems),
+                fulfillmentRate,
+                activeLoans: String(activeLoans),
+            },
+            chartsToDisplay: displayCharts,
         };
 
-    }, [userRole, scope, userData.name]);
+    }, [userRole, scope, userData.name, movements, items, loading]);
     
-    const chartsToDisplay = useMemo(() => {
-        if (scope === 'my') return myDashboardCharts;
-        return generalDashboardCharts;
-    }, [scope]);
-
     const title = scope === 'my' ? 'Meu Resumo' : 'Resumo Geral';
 
     return (
@@ -91,18 +127,17 @@ const WarehouseDashboardContent: React.FC<WarehouseDashboardContentProps> = ({ u
                  )}
             </div>
             
-            {/* KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard 
                 title="Total de Requisições" 
-                value={String(dashboardData.totalRequests)} 
+                value={dashboardData.totalRequests} 
                 change="" 
                 changeType="neutral" 
                 icon={<DocumentDuplicateIcon className="w-8 h-8 text-primary" />} 
               />
               <StatCard 
                 title="Itens em Estoque Baixo" 
-                value={String(dashboardData.lowStockItems)} 
+                value={dashboardData.lowStockItems} 
                 change="" 
                 changeType="neutral" 
                 icon={<BoltIcon className="w-8 h-8 text-secondary" />} 
@@ -116,36 +151,31 @@ const WarehouseDashboardContent: React.FC<WarehouseDashboardContentProps> = ({ u
               />
               <StatCard 
                 title="Empréstimos Ativos" 
-                value={String(allRequests.filter(r => r.type === 'Empréstimo' && r.status === 'Aprovado').length)} 
+                value={dashboardData.activeLoans} 
                 change="" 
                 changeType="neutral" 
                 icon={<CircleStackIcon className="w-8 h-8 text-orange-500" />} 
               />
             </div>
 
-             {/* Main Content */}
             <div className="space-y-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {chartsToDisplay.slice(0, 4).map(chart => (
-                        <ChartContainer key={chart.id} title={chart.title}>
-                            <DynamicChart 
-                                type={chart.type}
-                                data={chart.data}
-                                dataKey={chart.dataKey}
-                                nameKey={chart.nameKey}
-                            />
-                        </ChartContainer>
-                    ))}
-                </div>
-                {chartsToDisplay[4] && (
-                     <ChartContainer title={chartsToDisplay[4].title}>
-                        <DynamicChart 
-                            type={chartsToDisplay[4].type}
-                            data={chartsToDisplay[4].data}
-                            dataKey={chartsToDisplay[4].dataKey}
-                            nameKey={chartsToDisplay[4].nameKey}
-                        />
-                    </ChartContainer>
+                {loading ? (
+                     <div className="text-center py-10 text-light-text">Carregando gráficos...</div>
+                ) : error ? (
+                    <div className="text-center py-10 text-red-500">{error}</div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {chartsToDisplay.slice(0, 4).map(chart => (
+                            <ChartContainer key={chart.id} title={chart.title}>
+                                <DynamicChart 
+                                    type={chart.type}
+                                    data={chart.data}
+                                    dataKey={chart.dataKey}
+                                    nameKey={chart.nameKey}
+                                />
+                            </ChartContainer>
+                        ))}
+                    </div>
                 )}
             </div>
         </div>

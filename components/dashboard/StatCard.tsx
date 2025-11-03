@@ -1,7 +1,9 @@
 
+
 import React from 'react';
 import { StatCardType } from '../../types';
-import { ArrowUpIcon, ArrowDownIcon } from '../icons/IconComponents';
+// FIX: Import path for IconComponents was incorrect.
+import { ArrowUpIcon, ArrowDownIcon } from '../shared/IconComponents';
 
 const StatCard: React.FC<StatCardType> = ({ title, value, change, changeType, icon }) => {
     const changeColor = changeType === 'increase' ? 'text-green-500' : changeType === 'decrease' ? 'text-red-500' : 'text-light-text';

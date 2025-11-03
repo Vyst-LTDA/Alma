@@ -13,7 +13,8 @@ import InventoryTurnoverChart from '../components/dashboard/LatencyChart';
 import RecentRequestsTable from '../components/dashboard/RecentCommandsTable';
 // FIX: Import UserData type
 import { UserRole, UserData } from '../types';
-import { CubeIcon, BoltIcon, DocumentDuplicateIcon, CircleStackIcon } from '../components/icons/IconComponents';
+// FIX: Import path for IconComponents was incorrect.
+import { CubeIcon, BoltIcon, DocumentDuplicateIcon, CircleStackIcon } from '../components/shared/IconComponents';
 import AboutModal from '../components/shared/AboutModal';
 import CommunicationView from '../components/communication/CommunicationView';
 import ProfileModal from '../components/profile/ProfileModal';

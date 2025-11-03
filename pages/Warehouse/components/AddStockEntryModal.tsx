@@ -4,33 +4,46 @@
  *
 */
 import React, { useState, useEffect } from 'react';
-import { allRequests, mockInventoryItems } from '../../../data/mockData';
-import { Request, UserRole } from '../../../types';
-import { generateDailyId } from '../../../utils/idGenerator';
+// FIX: Import UserData type to resolve type error.
+import { UserRole, ItemDto, RegisterMovementRequestDto, UserData } from '../../../types';
+import { getItems, createCheckinMovement } from '../../../services/apiService';
 
 interface AddStockEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
   userRole: UserRole;
   onEntryAdded: () => void;
+  userData: UserData;
 }
 
-const AddStockEntryModal: React.FC<AddStockEntryModalProps> = ({ isOpen, onClose, userRole, onEntryAdded }) => {
+const AddStockEntryModal: React.FC<AddStockEntryModalProps> = ({ isOpen, onClose, userRole, onEntryAdded, userData }) => {
     const [selectedItem, setSelectedItem] = useState('');
     const [quantity, setQuantity] = useState(1);
-
-    const inventoryItems = mockInventoryItems;
+    const [inventoryItems, setInventoryItems] = useState<ItemDto[]>([]);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             setSelectedItem('');
             setQuantity(1);
+            const fetchItems = async () => {
+                setLoading(true);
+                try {
+                    const result = await getItems({ pageSize: 500 });
+                    setInventoryItems(result.items);
+                } catch (error) {
+                    console.error("Failed to load items for modal", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchItems();
         }
     }, [isOpen]);
 
     if (!isOpen) return null;
     
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (!selectedItem || quantity <= 0) {
             alert("Por favor, selecione um item e insira uma quantidade válida.");
             return;
@@ -42,21 +55,20 @@ const AddStockEntryModal: React.FC<AddStockEntryModalProps> = ({ isOpen, onClose
              return;
         }
 
-        const newEntryRequest: Request = {
-            id: generateDailyId('REQ', allRequests),
-            item: itemDetails.name,
-            category: itemDetails.category,
+        const newEntryRequest: RegisterMovementRequestDto = {
+            itemId: itemDetails.id,
+            userId: userData.id,
             quantity: quantity,
-            requester: userRole === 'admin' ? 'Admin (Entrada Direta)' : 'Usuário comum',
-            status: userRole === 'admin' ? 'Aprovado' : 'Pendente',
-            requestDate: new Date().toLocaleDateString('pt-BR'),
-            type: 'Uso Contínuo', // This type is overloaded to mean 'Stock Entry' in this context
-            unit: 'un', // Placeholder
+            observations: `Entrada de estoque registrada por ${userData.name}`
         };
-
-        allRequests.unshift(newEntryRequest);
-        onEntryAdded();
-        onClose();
+        
+        try {
+            await createCheckinMovement(newEntryRequest);
+            onEntryAdded();
+            onClose();
+        } catch (error: any) {
+            alert(`Falha ao registrar entrada: ${error.message}`);
+        }
     };
 
     return (
@@ -71,8 +83,9 @@ const AddStockEntryModal: React.FC<AddStockEntryModalProps> = ({ isOpen, onClose
                             value={selectedItem}
                             onChange={e => setSelectedItem(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary bg-white text-black"
+                            disabled={loading}
                         >
-                            <option value="" disabled>Selecione um item...</option>
+                            <option value="" disabled>{loading ? 'Carregando...' : 'Selecione um item...'}</option>
                             {inventoryItems.map(item => (
                                 <option key={item.id} value={item.id}>{item.name}</option>
                             ))}

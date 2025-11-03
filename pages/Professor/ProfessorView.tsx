@@ -59,7 +59,8 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
       case 'custom-analytics':
         return <CustomAnalyticsView onBack={() => setCurrentView('analytics')} />;
       case 'stock':
-        return <StockControlView userRole={userRole} />;
+        // FIX: Pass userData prop to satisfy StockControlViewProps requirements.
+        return <StockControlView userRole={userRole} userData={userData} />;
       case 'suppliers':
         return <SuppliersView userRole={userRole} />;
       case 'losses':
