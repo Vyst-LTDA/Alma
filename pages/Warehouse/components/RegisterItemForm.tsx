@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Supplier, CreateItemRequestDto } from '../../../types';
 import { mockSuppliers } from '../../../data/mockData';
-import { createItemApi } from '../../../data/mockData';
+import { createItem } from '../../../services/apiService';
 
 const unitsOfMeasure = [
     { abbreviation: 'PC', name: 'Peça' },
@@ -56,7 +56,7 @@ const RegisterItemForm: React.FC<RegisterItemModalProps> = ({ isOpen, onClose, o
         };
 
         try {
-            await createItemApi(newItem);
+            await createItem(newItem);
             alert("Item registrado com sucesso!");
             onItemRegistered();
             onClose();

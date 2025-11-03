@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ItemDto } from '../../../types';
 import { SearchIcon, ArchiveIcon } from '../../../components/shared/IconComponents';
-import { getItemsApi } from '../../../data/mockData';
+import { getItems } from '../../../services/apiService';
 
 type StockStatus = 'Disponível' | 'Estoque Baixo' | 'Indisponível';
 
@@ -32,26 +32,23 @@ const StockItemsTable: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
             setLoading(true);
             setError(null);
             try {
-                const result = await getItemsApi({ pageNumber: 1, pageSize: 200 });
+                const result = await getItems({ pageNumber: 1, pageSize: 200, searchTerm: searchTerm });
                 setItems(result.items);
-            } catch (err) {
-                setError('Falha ao buscar itens do estoque.');
+            } catch (err: any) {
+                setError(err.message || 'Falha ao buscar itens do estoque.');
                 console.error(err);
             } finally {
                 setLoading(false);
             }
         };
+        
+        // Debounce API calls while user is typing in search bar
+        const debounceFetch = setTimeout(() => {
+            fetchItems();
+        }, 300);
 
-        fetchItems();
-    }, [refreshKey]);
-
-    const filteredItems = useMemo(() => {
-        return items.filter(item =>
-            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.attributes.category && item.attributes.category.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-    }, [items, searchTerm]);
+        return () => clearTimeout(debounceFetch);
+    }, [refreshKey, searchTerm]);
 
     return (
         <div className="bg-light-card p-6 rounded-xl border border-gray-200 h-full flex flex-col">
@@ -85,11 +82,11 @@ const StockItemsTable: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {filteredItems.length > 0 ? filteredItems.map((item) => (
+                            {items.length > 0 ? items.map((item) => (
                                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 font-mono text-primary font-bold">{item.sku}</td>
                                     <td className="px-6 py-4 font-semibold">{item.name}</td>
-                                    <td className="px-6 py-4">{item.attributes.category || '--'}</td>
+                                    <td className="px-6 py-4">{item.attributes?.category || '--'}</td>
                                     <td className="px-6 py-4 text-center font-semibold">{item.stockQuantity}</td>
                                     <td className="px-6 py-4 text-center">
                                         <StockStatusBadge status={getStockStatus(item.stockQuantity)} />
@@ -100,8 +97,8 @@ const StockItemsTable: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
                                     <td colSpan={5}>
                                         <div className="flex flex-col items-center justify-center text-center text-light-text py-16">
                                             <ArchiveIcon className="w-16 h-16 text-gray-300 mb-4" />
-                                            <h3 className="font-semibold text-dark-text">Nenhum item em estoque</h3>
-                                            <p>Nenhum item encontrado. Tente registrar um novo item.</p>
+                                            <h3 className="font-semibold text-dark-text">Nenhum item encontrado</h3>
+                                            <p>Tente ajustar sua busca ou registrar um novo item no catálogo.</p>
                                         </div>
                                     </td>
                                 </tr>

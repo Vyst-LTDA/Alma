@@ -48,8 +48,8 @@ const DynamicAnalyticsChart: React.FC = () => {
 
     return (
         <div className="w-full h-full">
-            {/* FIX: Pass the 'data' prop to the dynamically rendered component. */}
-            <Component data={data} />
+            {/* FIX: The 'Component' variable has a union type of multiple components with different `data` prop shapes. Cast `data` to `any` to resolve the type mismatch. */}
+            <Component data={data as any} />
         </div>
     );
 };

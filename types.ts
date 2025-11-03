@@ -99,7 +99,7 @@ export interface ItemDto {
     stockQuantity: number;
     createdAt: string;
     updatedAt: string | null;
-    attributes: { [key: string]: any };
+    attributes: { [key: string]: any } | null;
 }
 
 export interface CreateItemRequestDto {
