@@ -8,7 +8,7 @@ import {
     UserDtoPagedResult, MovementDto, MovementDtoPagedResult, RegisterMovementRequestDto, 
     UpdateProfileRequestDto, ChangePasswordRequestDto, VersionInfo, UpdateStatusInfo, 
     ScriptDto, CreateScriptCommand, UpdateScriptCommand, HookDto, CreateHookCommand, 
-    WebhookSubscriptionDto, CreateWebhookSubscriptionCommand
+    WebhookSubscriptionDto, CreateWebhookSubscriptionCommand, CustomerDtoPagedResult, CreateCustomerCommand
 } from '../types';
 
 // The API is served from the same origin, so we use a relative path.
@@ -32,25 +32,24 @@ async function handleResponse<T>(response: Response): Promise<T> {
         throw new Error(errorMessage);
     }
     
-    // Handle responses that might have an empty body on success (e.g., 201, 204)
     const contentType = response.headers.get("content-type");
-    if (response.status === 204 || !contentType || !contentType.includes("application/json")) {
-        // For 201 Created, we try to parse text for a potential ID
-        if (response.status === 201) {
-            try {
-                const textResponse = await response.text();
-                // If it's a UUID, return it. Otherwise, return an empty object.
-                 if (textResponse.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)) {
-                    return textResponse as T;
-                }
-            } catch {
-                // Ignore if text parsing fails, fall back to empty object.
-            }
-        }
-        return {} as T; // Return empty object for empty or non-JSON success responses
+    const text = await response.text();
+
+    if (text.length === 0) {
+        return {} as T; // For 204 No Content or other empty bodies
     }
 
-    return response.json();
+    if (contentType && contentType.includes("application/json")) {
+        try {
+            return JSON.parse(text) as T;
+        } catch (e) {
+            // If JSON parsing fails but it's a success response, it might just be text
+            return text as T;
+        }
+    }
+    
+    // For text/plain responses (like UUIDs from 201 or script IDs from 200)
+    return text as T;
 }
 
 // --- Items ---
@@ -143,6 +142,25 @@ export const createCheckinMovement = async (movementData: RegisterMovementReques
     });
     return handleResponse<any>(response);
 };
+
+// --- Customers (replaces Suppliers) ---
+export const getCustomers = async (params: { pageNumber?: number, pageSize?: number }): Promise<CustomerDtoPagedResult> => {
+    const query = new URLSearchParams();
+    if (params.pageNumber) query.append('pageNumber', params.pageNumber.toString());
+    if (params.pageSize) query.append('pageSize', params.pageSize.toString());
+    const response = await fetch(`${API_BASE_URL}/api/v1/Customers?${query.toString()}`);
+    return handleResponse<CustomerDtoPagedResult>(response);
+};
+
+export const createCustomer = async (customerData: CreateCustomerCommand): Promise<string> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customerData),
+    });
+    return handleResponse<string>(response); // API returns the new ID as a string
+};
+
 
 // --- System ---
 export const getSystemVersion = async (): Promise<VersionInfo> => {

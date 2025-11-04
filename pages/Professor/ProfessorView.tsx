@@ -14,7 +14,6 @@ import AboutModal from '../../components/shared/AboutModal';
 import CommunicationView from '../../components/communication/CommunicationView';
 import ProfessorDashboard from './components/ProfessorDashboard';
 import AccountView from '../Account/AccountView';
-import { allRequests } from '../../data/mockData';
 import AnalyticsView from '../Warehouse/views/AnalyticsView';
 import StockControlView from '../Warehouse/views/StockControlView';
 import SuppliersView from '../Warehouse/views/SuppliersView';

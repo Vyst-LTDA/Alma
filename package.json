@@ -9,21 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "recharts": "^3.2.1",
-    "url": "^0.11.4",
-    "vite": "^7.1.10",
-    "process": "^0.11.10",
-    "@vitejs/plugin-react": "^5.0.4",
-    "path": "^0.12.7",
-    "vite-plugin-singlefile": "^2.3.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.12.7",
     "xlsx": "latest"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "path": "^0.12.7",
+    "process": "^0.11.10",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "url": "^0.11.4",
+    "vite": "^6.2.0",
+    "vite-plugin-singlefile": "^2.3.0"
   }
 }

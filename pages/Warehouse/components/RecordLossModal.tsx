@@ -3,10 +3,11 @@
  * All rights reserved.
  *
 */
-import React, { useState } from 'react';
-import { mockStockItems, mockLossRecords } from '../../../data/mockData';
-import { LossRecord, UserRole } from '../../../types';
+import React, { useState, useEffect } from 'react';
+import { mockLossRecords } from '../../../data/mockData';
+import { LossRecord, UserRole, ItemDto } from '../../../types';
 import { generateDailyId } from '../../../utils/idGenerator';
+import { getItems } from '../../../services/apiService';
 
 interface RecordLossModalProps {
   isOpen: boolean;
@@ -16,31 +17,56 @@ interface RecordLossModalProps {
 }
 
 const RecordLossModal: React.FC<RecordLossModalProps> = ({ isOpen, onClose, userRole, onLossRecorded }) => {
-    const [selectedItemCode, setSelectedItemCode] = useState('');
+    const [selectedItemId, setSelectedItemId] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [wasInStock, setWasInStock] = useState(false);
     const [report, setReport] = useState('');
+    const [inventoryItems, setInventoryItems] = useState<ItemDto[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            // Reset form state on open
+            setSelectedItemId('');
+            setQuantity(1);
+            setWasInStock(false);
+            setReport('');
+            
+            const fetchItems = async () => {
+                setLoading(true);
+                try {
+                    const result = await getItems({ pageSize: 500 });
+                    setInventoryItems(result.items);
+                } catch (error) {
+                    console.error("Failed to load items for modal", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchItems();
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const selectedItem = mockStockItems.find(item => item.code === selectedItemCode);
+        const selectedItem = inventoryItems.find(item => item.id === selectedItemId);
 
         if (!selectedItem) {
             alert('Por favor, selecione um item válido.');
             return;
         }
 
-        if (wasInStock && selectedItem.quantity < quantity) {
-            alert(`Não é possível registrar a perda de ${quantity} unidade(s), pois há apenas ${selectedItem.quantity} em estoque.`);
+        if (wasInStock && selectedItem.stockQuantity < quantity) {
+            alert(`Não é possível registrar a perda de ${quantity} unidade(s), pois há apenas ${selectedItem.stockQuantity} em estoque.`);
             return;
         }
 
-        // Create new loss record
+        // Create new loss record (mocked, as no API endpoint exists)
         const newLossRecord: LossRecord = {
             id: generateDailyId('LOSS', mockLossRecords),
-            itemCode: selectedItem.code,
+            itemCode: selectedItem.sku,
             itemName: selectedItem.name,
             quantity,
             report,
@@ -49,21 +75,11 @@ const RecordLossModal: React.FC<RecordLossModalProps> = ({ isOpen, onClose, user
             date: new Date().toLocaleDateString('pt-BR'),
         };
         mockLossRecords.unshift(newLossRecord);
-
-        // Deduct from stock if necessary
-        if (wasInStock) {
-            const itemIndex = mockStockItems.findIndex(item => item.code === selectedItemCode);
-            if (itemIndex > -1) {
-                mockStockItems[itemIndex].quantity -= quantity;
-                // Update status if needed
-                if (mockStockItems[itemIndex].quantity === 0) {
-                    mockStockItems[itemIndex].status = 'Indisponível';
-                } else if (mockStockItems[itemIndex].quantity < 10) { // Example threshold
-                    mockStockItems[itemIndex].status = 'Estoque Baixo';
-                }
-            }
-        }
-
+        
+        // In a real application, an API call would be made here to record the loss,
+        // which would then trigger a stock update on the backend if 'wasInStock' is true.
+        // Since there's no endpoint for losses, we only update the mock data and call the refresh handler.
+        
         onLossRecorded();
         onClose();
     };
@@ -77,14 +93,15 @@ const RecordLossModal: React.FC<RecordLossModalProps> = ({ isOpen, onClose, user
                         <label htmlFor="item" className="block text-sm font-medium text-dark-text mb-1">Item perdido</label>
                         <select 
                             id="item" 
-                            value={selectedItemCode} 
-                            onChange={e => setSelectedItemCode(e.target.value)} 
+                            value={selectedItemId} 
+                            onChange={e => setSelectedItemId(e.target.value)} 
                             required 
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary bg-white text-black"
+                            disabled={loading}
                         >
-                            <option value="" disabled>Selecione um item...</option>
-                            {mockStockItems.map(item => (
-                                <option key={item.code} value={item.code}>{item.name} ({item.code})</option>
+                            <option value="" disabled>{loading ? 'Carregando itens...' : 'Selecione um item...'}</option>
+                            {inventoryItems.map(item => (
+                                <option key={item.id} value={item.id}>{item.name} ({item.sku})</option>
                             ))}
                         </select>
                     </div>

@@ -81,15 +81,6 @@ export interface Supplier {
     category: string; // e.g., 'Eletrônicos', 'Material de Escritório'
 }
 
-export interface StockItem {
-    id: string;
-    code: string;
-    name: string;
-    category: string;
-    quantity: number;
-    status: 'Disponível' | 'Estoque Baixo' | 'Indisponível';
-}
-
 export interface LossRecord {
     id: string;
     itemCode: string;
@@ -100,6 +91,41 @@ export interface LossRecord {
     recordedBy: UserRole;
     date: string;
     category?: string;
+}
+
+// Types for Customers from API
+export interface AddressInfo {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+}
+
+export interface CreateCustomerCommand {
+    tenantId: string;
+    name: string;
+    taxId: string;
+    billingAddress: AddressInfo;
+    shippingAddress: AddressInfo;
+}
+
+export interface CustomerDto {
+    id: string;
+    tenantId: string;
+    name: string;
+    taxId: string;
+    billingAddress: AddressDto;
+    shippingAddress: AddressDto;
+    isActive: boolean;
+}
+
+export interface AddressDto {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
 }
 
 // Types from Swagger.json for Items
@@ -130,6 +156,8 @@ export interface PagedResult<T> {
     hasPreviousPage: boolean;
     hasNextPage: boolean;
 }
+
+export type CustomerDtoPagedResult = PagedResult<CustomerDto>;
 
 // Types from Swagger.json for Users
 export interface UserDto {

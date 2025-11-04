@@ -1,7 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { Supplier, CreateItemRequestDto } from '../../../types';
-import { mockSuppliers } from '../../../data/mockData';
-import { createItem } from '../../../services/apiService';
+/*
+ * Copyright (C) 2025 Vyst Ltda., Pedro Henrique Gracia & Antônio A. Meloni
+ * All rights reserved.
+ *
+*/
+import React, { useState, useMemo, useEffect } from 'react';
+// FIX: Import CustomerDto and fetch customers from the API instead of using mock suppliers.
+import { CustomerDto, CreateItemRequestDto } from '../../../types';
+import { createItem, getCustomers } from '../../../services/apiService';
 
 const unitsOfMeasure = [
     { abbreviation: 'PC', name: 'Peça' },
@@ -26,13 +31,30 @@ const RegisterItemForm: React.FC<RegisterItemModalProps> = ({ isOpen, onClose, o
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const suppliers: Supplier[] = mockSuppliers;
-    const categories: string[] = useMemo(() => [...new Set(suppliers.map(s => s.category))], [suppliers]);
+    // FIX: State for customers and loading status.
+    const [customers, setCustomers] = useState<CustomerDto[]>([]);
+    const [loadingCustomers, setLoadingCustomers] = useState(true);
 
-    const filteredSuppliers = useMemo(() => {
-        if (!selectedCategory) return [];
-        return suppliers.filter(supplier => supplier.category === selectedCategory);
-    }, [selectedCategory, suppliers]);
+    // FIX: Fetch customers from API when modal opens.
+    useEffect(() => {
+        if (isOpen) {
+            const fetchCustomers = async () => {
+                setLoadingCustomers(true);
+                try {
+                    const result = await getCustomers({ pageSize: 500 });
+                    setCustomers(result.items);
+                } catch (error) {
+                    console.error("Failed to load customers for modal", error);
+                } finally {
+                    setLoadingCustomers(false);
+                }
+            };
+            fetchCustomers();
+        }
+    }, [isOpen]);
+
+    // FIX: Use a static list of categories as customer data doesn't provide them.
+    const categories: string[] = useMemo(() => ['Escritório', 'Eletrônicos', 'Segurança', 'Alimentos', 'Didático', 'Limpeza', 'Manutenção'], []);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -48,7 +70,8 @@ const RegisterItemForm: React.FC<RegisterItemModalProps> = ({ isOpen, onClose, o
             attributes: {
                 category: formData.get('category') as string,
                 unitOfMeasure: formData.get('unitOfMeasure') as string,
-                supplierId: formData.get('supplier') as string,
+                // FIX: Changed from supplier to customer.
+                customerId: formData.get('customer') as string,
                 depositLocation: formData.get('deposit') as string,
                 unitValue: parseFloat(formData.get('unitValue') as string) || 0,
                 observation: formData.get('observation') as string
@@ -104,11 +127,12 @@ const RegisterItemForm: React.FC<RegisterItemModalProps> = ({ isOpen, onClose, o
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="supplier" className="block text-sm font-bold text-dark-text mb-1">Fornecedor</label>
-                            <select id="supplier" name="supplier" disabled={!selectedCategory || filteredSuppliers.length === 0} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary bg-white text-black disabled:bg-gray-100 disabled:cursor-not-allowed">
-                                <option value="">{selectedCategory ? 'Selecione um fornecedor...' : 'Selecione uma categoria primeiro'}</option>
-                                {filteredSuppliers.map(sup => (
-                                    <option key={sup.id} value={sup.id}>{sup.name}</option>
+                            {/* FIX: Changed from Supplier to Customer, removed dependency on category selection */}
+                            <label htmlFor="customer" className="block text-sm font-bold text-dark-text mb-1">Cliente</label>
+                            <select id="customer" name="customer" disabled={loadingCustomers} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary bg-white text-black disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                <option value="">{loadingCustomers ? 'Carregando clientes...' : 'Selecione um cliente...'}</option>
+                                {customers.map(customer => (
+                                    <option key={customer.id} value={customer.id}>{customer.name}</option>
                                 ))}
                             </select>
                         </div>

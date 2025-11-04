@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import RegisterItemForm from '../components/RegisterItemForm';
 import StockItemsTable from '../components/StockItemsTable';
 import { PlusIcon, ArchiveIcon, ArrowUturnLeftIcon } from '../../../components/shared/IconComponents';
-import { UserRole, Request, UserData } from '../../../types';
+// FIX: Removed unused 'Request' type.
+import { UserRole, UserData } from '../../../types';
 import RequestsManagementTable from '../components/RequestsManagementTable';
-import { allRequests } from '../../../data/mockData';
+// FIX: Removed unused 'allRequests' import which was causing an error.
 import AddStockEntryModal from '../components/AddStockEntryModal';
 
 

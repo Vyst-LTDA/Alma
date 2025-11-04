@@ -17,7 +17,6 @@ import SuppliersView from '../../Warehouse/views/SuppliersView';
 import LossesView from '../../Warehouse/views/LossesView';
 import StockControlView from '../../Warehouse/views/StockControlView';
 import RequestsManagementTable from '../../Warehouse/components/RequestsManagementTable';
-import { allEducationalRequests } from '../../../data/mockData';
 import { DashboardIcon, ChartBarIcon, MailIcon, FileTextIcon, ArchiveIcon, TruckIcon, ExclamationTriangleIcon, UsersIcon } from '../../../components/shared/IconComponents';
 import UserManagementView from './UserManagementView';
 import CreateUserView from './CreateUserView';
@@ -53,7 +52,7 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
     { name: 'Comunicação', icon: MailIcon, view: 'communication' },
     { name: 'Requisições', icon: FileTextIcon, view: 'requests' },
     { name: 'Controle de Estoque', icon: ArchiveIcon, view: 'stock' },
-    { name: 'Fornecedores', icon: TruckIcon, view: 'suppliers' },
+    { name: 'Clientes', icon: TruckIcon, view: 'suppliers' },
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
     { name: 'Gerenciar Usuários', icon: UsersIcon, view: 'users' },
     { name: 'Criar Usuários', icon: UsersIcon, view: 'create-user' },
