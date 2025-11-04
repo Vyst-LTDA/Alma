@@ -55,7 +55,8 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
   const renderContent = () => {
     switch (currentView) {
       case 'communication':
-        return <CommunicationView userRole={userRole} />;
+        // FIX: Pass userData prop to satisfy CommunicationViewProps requirements.
+        return <CommunicationView userRole={userRole} userData={userData} />;
       // Add cases for 'requests', 'stock', 'suppliers' here in the future
       case 'dashboard':
       default:

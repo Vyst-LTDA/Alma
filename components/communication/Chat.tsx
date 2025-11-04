@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { UserRole, Contact, Message } from '../../types';
+import { UserRole, Contact, Message, UserData, UserDto } from '../../types';
 import { SearchIcon, PlusIcon, UsersIcon, ChartBarIcon } from '../shared/IconComponents';
-import { mockUsers } from '../../data/mockData';
+import { getUsers } from '../../services/apiService';
 
 const initialConversations: { [key: string]: Message[] } = {
     'warehouse_main': [
@@ -11,15 +11,6 @@ const initialConversations: { [key: string]: Message[] } = {
         { id: 'msg3', senderId: 'admin_main', text: 'Texto de exemplo de mensagem.', timestamp: 'hh:mm' },
     ]
 };
-
-// FIX: Added case for 'professor' to prevent runtime errors when a professor is logged in.
-const getCurrentUser = (role: UserRole): Contact => {
-    switch(role) {
-        case 'warehouse': return { id: 'warehouse_main', name: 'Você', avatar: 'https://i.pravatar.cc/150?u=carlos-almoxarifado', role: 'warehouse', email: 'docente@instituicao.edu' };
-        case 'admin': return { id: 'admin_main', name: 'Você', avatar: '', role: 'admin', email: 'admin@instituicao.edu' };
-        case 'professor': return { id: 'professor_main', name: 'Você', avatar: 'https://i.pravatar.cc/150?u=ana-docente', role: 'professor', email: 'ana.pereira@instituicao.edu' };
-    }
-}
 
 interface CreateGroupModalProps {
     isOpen: boolean;
@@ -76,32 +67,68 @@ const roleDisplayMap: Record<UserRole, string> = {
 // Main Component
 interface ChatProps {
     userRole: UserRole;
+    userData: UserData;
     isCreateGroupModalOpen: boolean;
     setCreateGroupModalOpen: (isOpen: boolean) => void;
 }
 
-const Chat: React.FC<ChatProps> = ({ userRole, isCreateGroupModalOpen, setCreateGroupModalOpen }) => {
+const Chat: React.FC<ChatProps> = ({ userRole, userData, isCreateGroupModalOpen, setCreateGroupModalOpen }) => {
     const [conversations, setConversations] = useState(initialConversations);
     const [messageInput, setMessageInput] = useState('');
     const [contactSearch, setContactSearch] = useState('');
     const [searchStatus, setSearchStatus] = useState('');
 
-    const currentUser = getCurrentUser(userRole);
+    const [userContacts, setUserContacts] = useState<Contact[]>([]);
+    const [allUsers, setAllUsers] = useState<Contact[]>([]);
+    const [loadingContacts, setLoadingContacts] = useState(true);
+    
+    const currentUser: Contact = {
+        id: userData.id,
+        name: 'Você',
+        avatar: userData.avatar,
+        role: userRole,
+        email: userData.email,
+    };
+    
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
     
-    const [userContacts, setUserContacts] = useState<Contact[]>(() => {
-        return mockUsers.filter(u => u.id !== currentUser.id);
-    });
-    
-    const allUsers = useMemo(() => [currentUser, ...mockUsers], [currentUser]);
+    useEffect(() => {
+        const fetchUsers = async () => {
+            setLoadingContacts(true);
+            try {
+                const result = await getUsers({pageSize: 500});
+                
+                const mappedUsers = result.items.map((u: UserDto): Contact => ({
+                    id: u.id,
+                    name: u.fullName || 'Usuário',
+                    email: u.email || '',
+                    role: u.role?.toLowerCase() as UserRole,
+                    avatar: `https://i.pravatar.cc/150?u=${u.id}`,
+                }));
 
-    const getDefaultActiveContact = () => {
-        return userContacts.find(c => c.unreadCount)?.id || userContacts[0]?.id;
-    }
-
-    const [activeContactId, setActiveContactId] = useState<string | undefined>(getDefaultActiveContact());
+                setAllUsers(mappedUsers);
+                setUserContacts(mappedUsers.filter(u => u.id !== currentUser.id));
+                
+            } catch (error) {
+                console.error("Failed to fetch users:", error);
+                setSearchStatus('Falha ao carregar contatos.');
+            } finally {
+                setLoadingContacts(false);
+            }
+        };
+        fetchUsers();
+    }, [currentUser.id]);
     
-    const activeContact = [...userContacts, ...mockUsers].find(u => u.id === activeContactId);
+    const [activeContactId, setActiveContactId] = useState<string | undefined>(undefined);
+    
+    useEffect(() => {
+        if (!activeContactId && userContacts.length > 0) {
+             const defaultContact = userContacts[0]?.id;
+             setActiveContactId(defaultContact);
+        }
+    }, [userContacts, activeContactId]);
+
+    const activeContact = [...userContacts, ...allUsers.filter(u => u.isGroup)].find(u => u.id === activeContactId);
     
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -137,7 +164,7 @@ const Chat: React.FC<ChatProps> = ({ userRole, isCreateGroupModalOpen, setCreate
         setCreateGroupModalOpen(false);
     };
     
-    const handleAddContactByEmail = (e: React.FormEvent) => {
+    const handleAddContactByEmail = async (e: React.FormEvent) => {
         e.preventDefault();
         const email = contactSearch.trim().toLowerCase();
         if (!email) return;
@@ -150,17 +177,31 @@ const Chat: React.FC<ChatProps> = ({ userRole, isCreateGroupModalOpen, setCreate
             setTimeout(() => setSearchStatus(''), 3000);
             return;
         }
+        
+        try {
+            const result = await getUsers({ searchTerm: email, pageSize: 1 });
+            const foundUser = result.items[0];
 
-        const foundUser = mockUsers.find(u => u.email === email);
-        if (foundUser && foundUser.id !== currentUser.id) {
-            setUserContacts(prev => [...prev, foundUser]);
-            setActiveContactId(foundUser.id);
-            setContactSearch('');
-            setSearchStatus('Contato adicionado!');
-        } else {
-            setSearchStatus('Usuário não encontrado ou inválido.');
+            if (foundUser && foundUser.id !== currentUser.id) {
+                const newContact: Contact = {
+                    id: foundUser.id,
+                    name: foundUser.fullName || 'Usuário',
+                    email: foundUser.email || '',
+                    role: foundUser.role?.toLowerCase() as UserRole,
+                    avatar: `https://i.pravatar.cc/150?u=${foundUser.id}`,
+                };
+                setUserContacts(prev => [newContact, ...prev]);
+                setActiveContactId(newContact.id);
+                setContactSearch('');
+                setSearchStatus('Contato adicionado!');
+            } else {
+                setSearchStatus('Usuário não encontrado ou inválido.');
+            }
+        } catch (error) {
+            setSearchStatus('Erro ao buscar usuário.');
+        } finally {
+            setTimeout(() => setSearchStatus(''), 3000);
         }
-        setTimeout(() => setSearchStatus(''), 3000);
     }
 
     const handleSendMessage = (e: React.FormEvent) => {
@@ -226,16 +267,18 @@ const Chat: React.FC<ChatProps> = ({ userRole, isCreateGroupModalOpen, setCreate
         const isSent = message.senderId === currentUser.id;
         const sender = allUsers.find(u => u.id === message.senderId);
     
-        if (!sender) return null;
+        if (!sender && !isSent) return null;
+    
+        const senderDisplay = isSent ? currentUser : sender!;
     
         return (
             <div className={`flex items-end gap-3 my-4 ${isSent ? 'flex-row-reverse' : ''}`}>
-                <img src={sender.avatar} alt={sender.name} className="w-8 h-8 rounded-full bg-gray-200" />
+                <img src={senderDisplay.avatar} alt={senderDisplay.name} className="w-8 h-8 rounded-full bg-gray-200" />
                 <div className={`flex flex-col ${isSent ? 'items-end' : 'items-start'}`}>
                     <div className={`p-3 rounded-xl max-w-sm ${isSent ? 'bg-primary text-white rounded-br-none' : 'bg-gray-100 text-dark-text rounded-bl-none'}`}>
                         <p className="text-sm">{message.text}</p>
                     </div>
-                    <span className="text-xs text-light-text mt-1.5">{isSent ? 'Você' : sender.name} • {message.timestamp}</span>
+                    <span className="text-xs text-light-text mt-1.5">{isSent ? 'Você' : senderDisplay.name} • {message.timestamp}</span>
                 </div>
             </div>
         );
@@ -262,9 +305,13 @@ const Chat: React.FC<ChatProps> = ({ userRole, isCreateGroupModalOpen, setCreate
                 {searchStatus && <p className="text-xs text-center text-light-text mb-2">{searchStatus}</p>}
 
                 <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-2">
-                    {userContacts.map(contact => (
-                        <ContactItem key={contact.id} contact={contact} isActive={contact.id === activeContactId} onClick={() => setActiveContactId(contact.id)} />
-                    ))}
+                    {loadingContacts ? (
+                        <div className="text-center text-light-text">Carregando contatos...</div>
+                    ) : (
+                        userContacts.map(contact => (
+                            <ContactItem key={contact.id} contact={contact} isActive={contact.id === activeContactId} onClick={() => setActiveContactId(contact.id)} />
+                        ))
+                    )}
                 </div>
             </div>
 
@@ -292,7 +339,7 @@ const Chat: React.FC<ChatProps> = ({ userRole, isCreateGroupModalOpen, setCreate
                             </div>
                         </div>
                         <div className="flex-grow overflow-y-auto py-4 pr-2 -mr-2">
-                            {(conversations[activeContactId] || []).map(msg => (
+                            {(conversations[activeContactId!] || []).map(msg => (
                                 <MessageBubble key={msg.id} message={msg} currentUser={currentUser} />
                             ))}
                             <div ref={messagesEndRef} />

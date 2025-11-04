@@ -84,7 +84,7 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
       case 'losses':
         return <LossesView userRole={userRole} />;
       case 'communication':
-        return <CommunicationView userRole={userRole} />;
+        return <CommunicationView userRole={userRole} userData={userData} />;
       case 'account':
         return <AccountView userRole={userRole} userData={userData} onUpdateUserData={handleUpdateUserData} onNavigate={setCurrentView} />;
       case 'dashboard':

@@ -63,7 +63,7 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
   const renderContent = () => {
     switch (currentView) {
       case 'communication':
-        return <CommunicationView userRole={userRole} />;
+        return <CommunicationView userRole={userRole} userData={userData} />;
       case 'account':
         return <AccountView userRole={userRole} userData={userData} onUpdateUserData={() => {}} onNavigate={setCurrentView} />;
       case 'requests':

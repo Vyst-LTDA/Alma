@@ -53,7 +53,7 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
   const renderContent = () => {
     switch (currentView) {
       case 'communication':
-        return <CommunicationView userRole={userRole} />;
+        return <CommunicationView userRole={userRole} userData={userData} />;
       case 'analytics':
         return <AnalyticsView userRole={userRole} userData={userData} onNavigate={setCurrentView} />;
       case 'custom-analytics':

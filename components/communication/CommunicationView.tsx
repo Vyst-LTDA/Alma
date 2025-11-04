@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { UserRole } from '../../types';
+import { UserRole, UserData } from '../../types';
 import Announcements from './Announcements';
 import Chat from './Chat';
 
 interface CommunicationViewProps {
     userRole: UserRole;
+    userData: UserData;
 }
 
 type ActiveTab = 'announcements' | 'chat';
 
-const CommunicationView: React.FC<CommunicationViewProps> = ({ userRole }) => {
+const CommunicationView: React.FC<CommunicationViewProps> = ({ userRole, userData }) => {
     const [activeTab, setActiveTab] = useState<ActiveTab>('announcements');
     const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
 
@@ -18,7 +19,7 @@ const CommunicationView: React.FC<CommunicationViewProps> = ({ userRole }) => {
             case 'announcements':
                 return <Announcements userRole={userRole} />;
             case 'chat':
-                return <Chat userRole={userRole} isCreateGroupModalOpen={isCreateGroupModalOpen} setCreateGroupModalOpen={setIsCreateGroupModalOpen} />;
+                return <Chat userRole={userRole} userData={userData} isCreateGroupModalOpen={isCreateGroupModalOpen} setCreateGroupModalOpen={setIsCreateGroupModalOpen} />;
             default:
                 return null;
         }

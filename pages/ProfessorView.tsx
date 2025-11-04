@@ -53,7 +53,8 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
   const renderContent = () => {
     switch (currentView) {
       case 'communication':
-        return <CommunicationView userRole={userRole} />;
+        // FIX: Pass userData prop to satisfy CommunicationViewProps requirements.
+        return <CommunicationView userRole={userRole} userData={userData} />;
       case 'dashboard':
       default:
         return (
