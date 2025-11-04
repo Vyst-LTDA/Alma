@@ -148,6 +148,18 @@ export interface RegisterUserRequestDto {
     role: string;
 }
 
+// FIX: Add UpdateProfileRequestDto and ChangePasswordRequestDto to fix missing type errors.
+export interface UpdateProfileRequestDto {
+    fullName: string;
+    email: string;
+}
+
+export interface ChangePasswordRequestDto {
+    currentPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
+}
+
 export type UserDtoPagedResult = PagedResult<UserDto>;
 
 // Types from Swagger.json for Movements

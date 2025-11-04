@@ -3,7 +3,7 @@
  * All rights reserved.
  *
 */
-import { CreateItemRequestDto, ItemDto, PagedResult, RegisterUserRequestDto, UserDto, UserDtoPagedResult, MovementDto, MovementDtoPagedResult, RegisterMovementRequestDto } from '../types';
+import { CreateItemRequestDto, ItemDto, PagedResult, RegisterUserRequestDto, UserDto, UserDtoPagedResult, MovementDto, MovementDtoPagedResult, RegisterMovementRequestDto, UpdateProfileRequestDto, ChangePasswordRequestDto } from '../types';
 
 // The API is served from the same origin, so we use a relative path.
 const API_BASE_URL = ''; 
@@ -162,4 +162,34 @@ export const createCheckinMovement = async (movementData: RegisterMovementReques
         body: JSON.stringify(movementData),
     });
     return handleResponse<any>(response);
+};
+
+/**
+ * Updates the profile of the currently authenticated user.
+ * Corresponds to: PUT /api/v1/Users/me
+ */
+export const updateCurrentUserProfile = async (profileData: UpdateProfileRequestDto): Promise<UserDto> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Users/me`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+    });
+    return handleResponse<UserDto>(response);
+};
+
+/**
+ * Changes the password for the currently authenticated user.
+ * Corresponds to: POST /api/v1/Users/me/change-password
+ */
+export const changeCurrentUserPassword = async (passwordData: ChangePasswordRequestDto): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Users/me/change-password`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(passwordData),
+    });
+    await handleResponse<void>(response);
 };

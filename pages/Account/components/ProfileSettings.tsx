@@ -6,6 +6,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { UserCircleIcon } from '../../../components/shared/IconComponents';
 import { UserData } from '../../../types';
+import { updateCurrentUserProfile } from '../../../services/apiService';
 
 interface ProfileSettingsProps {
     userData: UserData;
@@ -15,6 +16,9 @@ interface ProfileSettingsProps {
 const ProfileSettings: React.FC<ProfileSettingsProps> = ({ userData, onUpdate }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [localUserData, setLocalUserData] = useState(userData);
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
         setLocalUserData(userData);
@@ -41,9 +45,32 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ userData, onUpdate })
         setLocalUserData(prev => ({ ...prev, [id]: value }));
     }
 
-    const handleSave = () => {
-        onUpdate(localUserData);
-        alert('Alterações salvas com sucesso!');
+    const handleSave = async () => {
+        setIsSaving(true);
+        setError(null);
+        setSuccessMessage(null);
+
+        try {
+            const updatedUser = await updateCurrentUserProfile({
+                fullName: localUserData.name,
+                email: localUserData.email,
+            });
+
+            const updatedData: Partial<UserData> = {
+                name: updatedUser.fullName || localUserData.name,
+                email: updatedUser.email || localUserData.email,
+                avatar: localUserData.avatar,
+            };
+            
+            onUpdate(updatedData);
+            setSuccessMessage('Alterações salvas com sucesso!');
+
+        } catch (err: any) {
+            setError(err.message || "Falha ao salvar as alterações.");
+        } finally {
+            setIsSaving(false);
+            setTimeout(() => setSuccessMessage(null), 3000);
+        }
     };
 
     return (
@@ -96,9 +123,14 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ userData, onUpdate })
                 </div>
             </div>
 
-            <div className="border-t border-gray-200 mt-8 pt-6 flex justify-end">
-                <button onClick={handleSave} className="px-6 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 shadow-sm transition-transform transform hover:scale-105">
-                    Salvar Alterações
+            <div className="border-t border-gray-200 mt-8 pt-6 flex justify-end items-center gap-4">
+                {error && <p className="text-sm text-red-600">{error}</p>}
+                {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
+                <button 
+                    onClick={handleSave} 
+                    disabled={isSaving}
+                    className="px-6 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 shadow-sm transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-wait">
+                    {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
             </div>
         </div>
