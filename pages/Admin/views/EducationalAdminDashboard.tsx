@@ -15,7 +15,7 @@ import WarehouseDashboardContent from '../../Warehouse/views/WarehouseDashboardC
 import CustomAnalyticsView from './CustomAnalyticsView';
 import SuppliersView from '../../Warehouse/views/SuppliersView';
 import LossesView from '../../Warehouse/views/LossesView';
-import EducationalStockControlView from '../../Warehouse/views/EducationalStockControlView';
+import StockControlView from '../../Warehouse/views/StockControlView';
 import RequestsManagementTable from '../../Warehouse/components/RequestsManagementTable';
 import { allEducationalRequests } from '../../../data/mockData';
 import { DashboardIcon, ChartBarIcon, MailIcon, FileTextIcon, ArchiveIcon, TruckIcon, ExclamationTriangleIcon, UsersIcon } from '../../../components/shared/IconComponents';
@@ -34,7 +34,6 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   
-  // FIX: Add missing 'id' property to userData state to match UserData type.
   const [userData] = useState<UserData>({
     id: 'admin-edu-placeholder',
     name: 'Admin (Educacional)',
@@ -71,7 +70,6 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
           <div className="h-full flex flex-col">
             <h2 className="text-2xl font-bold text-dark-text mb-4">Requisições (Educacional)</h2>
             <div className="flex-grow">
-              {/* FIX: The 'requests' prop is not valid for this component because it fetches its own data. It has been removed. */}
               <RequestsManagementTable />
             </div>
           </div>
@@ -81,7 +79,7 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
       case 'custom-analytics':
         return <CustomAnalyticsView onBack={() => setCurrentView('analytics')} />;
       case 'stock':
-        return <EducationalStockControlView userRole={userRole} />;
+        return <StockControlView userRole={userRole} userData={userData} />;
       case 'suppliers':
         return <SuppliersView userRole={userRole} />;
       case 'losses':

@@ -42,9 +42,10 @@ const ActionMenu: React.FC<{ request: Request }> = ({ request }) => {
 
 interface MyRequestsTableProps {
     userData: UserData;
+    refreshKey: number;
 }
 
-const MyRequestsTable: React.FC<MyRequestsTableProps> = ({ userData }) => {
+const MyRequestsTable: React.FC<MyRequestsTableProps> = ({ userData, refreshKey }) => {
     const [requests, setRequests] = useState<Request[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -73,7 +74,7 @@ const MyRequestsTable: React.FC<MyRequestsTableProps> = ({ userData }) => {
         };
 
         fetchRequests();
-    }, [userData.id]);
+    }, [userData.id, refreshKey]);
 
     const filteredRequests = useMemo(() => {
         return requests.filter(req => {

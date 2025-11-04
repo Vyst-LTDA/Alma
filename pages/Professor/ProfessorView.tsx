@@ -30,6 +30,7 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [refreshKey, setRefreshKey] = useState(0);
   
   const [userData, setUserData] = useState<UserData>({
     id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', // Example UUID for API calls
@@ -45,9 +46,7 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
   };
 
   const handleNewRequest = () => {
-    // Navigate to the requests view to see the history update after a new request.
-    // The table itself will handle re-fetching.
-    setCurrentView('requests');
+    setRefreshKey(prev => prev + 1);
   };
 
   const renderContent = () => {
@@ -78,14 +77,14 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
                         Nova Requisição
                     </button>
                 </div>
-                <MyRequestsTable userData={userData} />
+                <MyRequestsTable userData={userData} refreshKey={refreshKey} />
             </>
         );
       case 'account':
         return <AccountView userRole={userRole} userData={userData} onUpdateUserData={handleUpdateUserData} onNavigate={setCurrentView} />;
       case 'dashboard':
       default:
-        return <ProfessorDashboard onNewRequest={() => setIsRequestModalOpen(true)} userData={userData} />;
+        return <ProfessorDashboard onNewRequest={() => setIsRequestModalOpen(true)} userData={userData} refreshKey={refreshKey} />;
     }
   }
 

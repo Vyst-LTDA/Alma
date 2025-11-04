@@ -9,7 +9,7 @@ import Header from '../../components/layout/Header';
 import { UserRole, UserData } from '../../types';
 import AboutModal from '../../components/shared/AboutModal';
 import { PlusIcon } from '../../components/shared/IconComponents';
-import EducationalStockControlView from './views/EducationalStockControlView';
+import StockControlView from './views/StockControlView';
 import WarehouseDashboardContent from './views/WarehouseDashboardContent';
 import AnalyticsView from './views/AnalyticsView';
 import SuppliersView from './views/SuppliersView';
@@ -17,8 +17,7 @@ import LossesView from './views/LossesView';
 import CommunicationView from '../../components/communication/CommunicationView';
 import AccountView from '../Account/AccountView';
 import RequestsManagementTable from './components/RequestsManagementTable';
-import EducationalAddStockEntryModal from './components/EducationalAddStockEntryModal';
-import { allEducationalRequests } from '../../data/mockData';
+import AddStockEntryModal from './components/AddStockEntryModal';
 
 interface DashboardProps {
   userRole: UserRole;
@@ -31,11 +30,10 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // FIX: Add id to userData to match UserData type.
   const [userData, setUserData] = useState<UserData>({
-    id: 'warehouse-placeholder-id',
-    name: '',
-    avatar: '',
+    id: 'b2d1f8a0-5b3a-4c9c-8f9d-1b2c3d4e5f6a', // Example UUID for API calls
+    name: 'Almoxarifado',
+    avatar: 'https://i.pravatar.cc/150?u=almoxarifado-staff',
     email: 'almoxarifado@instituicao.edu',
     cpf: '999.888.777-66',
     linkedin: 'almoxarifado-staff'
@@ -49,15 +47,10 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
     setRefreshKey(prev => prev + 1);
   };
 
-  const educationalRequests = useMemo(() => {
-    return [...allEducationalRequests]; 
-  }, [refreshKey]);
-
-
   const renderContent = () => {
     switch (currentView) {
       case 'stock':
-        return <EducationalStockControlView userRole={userRole} />;
+        return <StockControlView userRole={userRole} userData={userData} />;
       case 'analytics':
         return <AnalyticsView userRole={userRole} onNavigate={setCurrentView} userData={userData} />;
        case 'requests':
@@ -74,7 +67,6 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
               </button>
             </div>
             <div className="flex-grow mt-4">
-              {/* FIX: The 'requests' prop is not valid for this component. Using 'refreshKey' to trigger data refetches. */}
               <RequestsManagementTable refreshKey={refreshKey} />
             </div>
           </div>
@@ -116,7 +108,7 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
         </main>
       </div>
       <AboutModal isOpen={isAboutModalOpen} onClose={() => setIsAboutModalOpen(false)} />
-      <EducationalAddStockEntryModal
+      <AddStockEntryModal
         isOpen={isRequestModalOpen}
         onClose={() => setIsRequestModalOpen(false)}
         userRole={userRole}
@@ -124,6 +116,7 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
           handleEntryAdded();
           setIsRequestModalOpen(false);
         }}
+        userData={userData}
       />
     </>
   );

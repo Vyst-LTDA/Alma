@@ -12,10 +12,19 @@ type LoanStatus = 'Vencido' | 'Vence Hoje' | 'Em Breve' | 'Em Dia';
 const getLoanStatus = (returnDate?: string): LoanStatus => {
     if (!returnDate) return 'Em Dia';
     const today = new Date();
-    today.setHours(0,0,0,0);
-    const [day, month, year] = returnDate.split('/');
-    const due = new Date(`${year}-${month}-${day}`);
-    due.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
+
+    let due: Date;
+    // Handles both DD/MM/YYYY and YYYY-MM-DD to be robust
+    if (returnDate.includes('/')) {
+        const parts = returnDate.split('/');
+        due = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+    } else {
+        const parts = returnDate.split('-');
+        due = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+    due.setHours(0, 0, 0, 0);
+
     const diffTime = due.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -24,6 +33,7 @@ const getLoanStatus = (returnDate?: string): LoanStatus => {
     if (diffDays <= 3) return 'Em Breve';
     return 'Em Dia';
 }
+
 
 const LoanStatusBadge: React.FC<{ status: LoanStatus }> = ({ status }) => {
     const baseClasses = 'px-3 py-1 text-xs font-semibold rounded-full inline-block';

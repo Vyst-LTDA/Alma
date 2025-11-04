@@ -6,20 +6,23 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import StatCard from '../../Warehouse/components/StatCard';
 import { ClockIcon, CheckCircleIcon, FileTextIcon } from '../../../components/shared/IconComponents';
-import { UserData, ChartConfig, MovementDto, ItemDto } from '../../../types';
+import { UserData, ChartConfig, MovementDto, ItemDto, Request } from '../../../types';
 import DynamicChart from '../../../components/shared/DynamicChart';
 import ChartContainer from '../../../components/shared/ChartContainer';
 import { getMovementsByUser, getItems } from '../../../services/apiService';
+import ActiveLoansTable from './ActiveLoansTable';
 
 interface ProfessorDashboardProps {
     onNewRequest: () => void;
     userData: UserData;
+    refreshKey: number;
 }
 
-const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, userData }) => {
+const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, userData, refreshKey }) => {
     const [loading, setLoading] = useState(true);
     const [myData, setMyData] = useState({ pendingRequests: 0, requestsThisMonth: 0 });
     const [myCharts, setMyCharts] = useState<ChartConfig[]>([]);
+    const [activeLoans, setActiveLoans] = useState<Request[]>([]);
     
     useEffect(() => {
         const fetchData = async () => {
@@ -42,6 +45,44 @@ const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, u
                 setMyData({ pendingRequests: 0, requestsThisMonth });
 
                 const itemCategoryMap = new Map(itemsResult.items.map(i => [i.id, i.attributes?.category || 'Não categorizado']));
+
+                const loans = userCheckouts
+                   .map(mov => {
+                       const obs = mov.observations || '';
+                       const isLoan = obs.includes('Tipo: Empréstimo');
+                       if (!isLoan) return null;
+
+                       const returnDateMatch = obs.match(/Devolução: ([\d-]+)\./);
+                       const returnDateStr = returnDateMatch ? returnDateMatch[1] : undefined;
+
+                       const request: Request = {
+                           id: mov.id,
+                           item: mov.itemName || 'N/A',
+                           quantity: mov.quantity,
+                           requester: mov.userFullName || 'N/A',
+                           status: 'Aprovado',
+                           requestDate: new Date(mov.movementDate).toLocaleDateString('pt-BR'),
+                           type: 'Empréstimo',
+                           category: itemCategoryMap.get(mov.itemId) || 'N/A',
+                           unit: 'UN', // Mock data
+                           returnDate: returnDateStr ? new Date(returnDateStr.replace(/-/g, '\/')).toLocaleDateString('pt-BR') : undefined
+                       };
+                       
+                       if (returnDateStr) {
+                           const today = new Date();
+                           today.setHours(0, 0, 0, 0);
+                           const [year, month, day] = returnDateStr.split('-');
+                           const due = new Date(Number(year), Number(month) - 1, Number(day));
+                           due.setHours(0, 0, 0, 0);
+                           if (due >= today) {
+                               return request;
+                           }
+                       }
+                       return null;
+                   })
+                   .filter((r): r is Request => r !== null);
+               
+                setActiveLoans(loans);
 
                 const monthlyData = userCheckouts.reduce((acc, mov) => {
                     const month = new Date(mov.movementDate).toLocaleString('pt-BR', { month: 'short' });
@@ -69,7 +110,7 @@ const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, u
             }
         };
         fetchData();
-    }, [userData.id]);
+    }, [userData.id, refreshKey]);
 
     const title = 'Meu Painel';
 
@@ -111,20 +152,25 @@ const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, u
             {/* Charts */}
             <div className="space-y-8">
                 {loading ? (
-                    <div className="text-center py-10 text-light-text">Carregando gráficos...</div>
+                    <div className="text-center py-10 text-light-text">Carregando dados...</div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {myCharts.map(chart => (
-                            <ChartContainer key={chart.id} title={chart.title}>
-                                <DynamicChart 
-                                    type={chart.type}
-                                    data={chart.data}
-                                    dataKey={chart.dataKey}
-                                    nameKey={chart.nameKey}
-                                />
-                            </ChartContainer>
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {myCharts.map(chart => (
+                                <ChartContainer key={chart.id} title={chart.title}>
+                                    <DynamicChart 
+                                        type={chart.type}
+                                        data={chart.data}
+                                        dataKey={chart.dataKey}
+                                        nameKey={chart.nameKey}
+                                    />
+                                </ChartContainer>
+                            ))}
+                        </div>
+                        <div className="mt-8">
+                           <ActiveLoansTable loans={activeLoans} />
+                        </div>
+                    </>
                 )}
             </div>
         </>
