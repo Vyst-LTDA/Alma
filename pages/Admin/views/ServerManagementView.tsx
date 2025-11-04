@@ -4,29 +4,40 @@ import { Cog6ToothIcon, CodeBracketIcon, ExclamationTriangleIcon, ServerStackIco
 import StatusView from './server/StatusView';
 import ScriptingView from './server/ScriptingView';
 import IntegrationsView from './server/IntegrationsView';
+import { getSystemVersion, getUpdateStatus } from '../../../services/apiService';
+import { UpdateStatusInfo, VersionInfo } from '../../../types';
+
 
 type SubView = 'status' | 'scripting' | 'integrations';
 
 interface UpdateInfo {
-    status: 'checking' | 'updated' | 'available';
+    status: 'checking' | 'updated' | 'available' | 'error';
     currentVersion: string;
     latestVersion?: string;
 }
 
 const ServerManagementView: React.FC = () => {
     const [activeView, setActiveView] = useState<SubView>('status');
-    const [updateInfo, setUpdateInfo] = useState<UpdateInfo>({ status: 'checking', currentVersion: '1.2.3' });
+    const [updateInfo, setUpdateInfo] = useState<UpdateInfo>({ status: 'checking', currentVersion: '...' });
 
-    const checkVersion = () => {
+    const checkVersion = async () => {
         setUpdateInfo(prev => ({ ...prev, status: 'checking' }));
-        setTimeout(() => {
-            const isUpdateAvailable = Math.random() > 0.5;
-            if (isUpdateAvailable) {
-                setUpdateInfo({ status: 'available', currentVersion: '1.2.3', latestVersion: '1.3.0' });
-            } else {
-                setUpdateInfo({ status: 'updated', currentVersion: '1.2.3' });
-            }
-        }, 1500); // Simulate network delay
+        try {
+             const [versionInfo, updateStatus] = await Promise.all([
+                getSystemVersion(),
+                getUpdateStatus()
+            ]);
+
+            setUpdateInfo({
+                currentVersion: versionInfo.version || 'N/A',
+                latestVersion: updateStatus.latestVersion,
+                status: updateStatus.isUpdateAvailable ? 'available' : 'updated'
+            });
+
+        } catch (error) {
+            console.error("Failed to check for updates:", error);
+            setUpdateInfo(prev => ({ ...prev, status: 'error' }));
+        }
     };
 
     useEffect(() => {
@@ -73,6 +84,12 @@ const ServerManagementView: React.FC = () => {
                         <button className="px-4 py-1.5 text-xs font-bold bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
                             Atualizar Agora
                         </button>
+                    </div>
+                );
+             case 'error':
+                 return (
+                    <div className="flex items-center gap-2 text-sm font-semibold text-red-600">
+                        <ExclamationTriangleIcon className="w-5 h-5" /> Falha ao verificar atualizações.
                     </div>
                 );
             default: return null;

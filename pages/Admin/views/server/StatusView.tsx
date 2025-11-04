@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { ArrowPathIcon, CheckCircleIcon } from '../../../../components/shared/IconComponents';
 
 interface UpdateInfo {
-    status: 'checking' | 'updated' | 'available';
+    // FIX: Add 'error' to the status type to match the parent component's definition.
+    status: 'checking' | 'updated' | 'available' | 'error';
     currentVersion: string;
     latestVersion?: string;
 }

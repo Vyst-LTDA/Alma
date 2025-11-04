@@ -184,3 +184,58 @@ export interface RegisterMovementRequestDto {
     quantity: number;
     observations?: string | null;
 }
+
+// Types for Server Management
+export interface VersionInfo {
+    version: string;
+}
+
+export interface UpdateStatusInfo {
+    isUpdateAvailable: boolean;
+    latestVersion?: string;
+}
+
+export type ScriptLanguage = 'javascript' | 'python' | 'lua';
+
+export interface ScriptDto {
+    id: string;
+    name: string;
+    content: string;
+    language: ScriptLanguage; // Assuming the API returns a string representation
+}
+
+export interface CreateScriptCommand {
+    name: string;
+    content: string;
+    language: number; // 1 for JavaScript, 2 for Python, 3 for Lua
+}
+
+export interface UpdateScriptCommand {
+    id: string;
+    name: string;
+    content: string;
+    language: number;
+}
+
+export interface HookDto {
+    id: string;
+    scriptId: string;
+    hookName: string;
+}
+
+export interface CreateHookCommand {
+    scriptId: string;
+    hookName: string;
+}
+
+export interface WebhookSubscriptionDto {
+    id: string;
+    eventType: string;
+    targetUrl: string;
+    isActive: boolean;
+}
+
+export interface CreateWebhookSubscriptionCommand {
+    eventType: string;
+    targetUrl: string;
+}

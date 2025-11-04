@@ -1,41 +1,108 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FileTextIcon, PlusIcon, TrashIcon } from '../../../../components/shared/IconComponents';
 import ScriptingGuide from '../../components/server/ScriptingGuide';
+import { ScriptDto, HookDto, ScriptLanguage as ScriptLanguageType, CreateScriptCommand, UpdateScriptCommand } from '../../../../types';
+import { getScripts, getHooks, createScript, createHook, updateScript, deleteHook, deleteScript } from '../../../../services/apiService';
 
 type Language = 'javascript' | 'python' | 'lua';
 
-interface Script {
-    id: string;
-    name: string;
-    language: Language;
+interface Script extends ScriptDto {
     hook: string;
-    content: string;
+    hookId?: string;
 }
 
-const mockScripts: Script[] = [
-    { id: 'script-1', name: 'Prefix Sku', language: 'javascript', hook: 'before:CreateItem', content: "function handle(context) {\n    var command = context.context;\n    log.info('Executando script before:CreateItem para o item: ' + command.Sku);\n    if (command.Sku && !command.Sku.startsWith('SKU-')) {\n        log.info('Modificando SKU de \"' + command.Sku + '\" para \"SKU-' + command.Sku + '\"');\n        command.Sku = 'SKU-' + command.Sku;\n    }\n    return context;\n}" },
-    { id: 'script-2', name: 'Log After Create', language: 'python', hook: 'after:CreateItem', content: "def handle(context):\n    item = context['context']\n    log.info('Item ' + item.Name + ' (ID: ' + str(item.Id) + ') foi criado com sucesso com o SKU: ' + item.Sku)\n    return context" }
-];
+const langStringToEnum: Record<Language, number> = {
+    javascript: 1,
+    python: 2,
+    lua: 3,
+};
+
+const langEnumToString: Record<number, Language> = {
+    1: 'javascript',
+    2: 'python',
+    3: 'lua',
+};
 
 const ScriptingView: React.FC = () => {
-    const [scripts, setScripts] = useState<Script[]>(mockScripts);
-    const [activeScriptId, setActiveScriptId] = useState<string | null>(scripts.length > 0 ? scripts[0].id : null);
+    const [scripts, setScripts] = useState<Script[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [activeScriptId, setActiveScriptId] = useState<string | null>(null);
     const [editorState, setEditorState] = useState<Script | null>(null);
     const [isGuideVisible, setIsGuideVisible] = useState(false);
+
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const [scriptsData, hooksData] = await Promise.all([getScripts(), getHooks()]);
+            const hooksMap = new Map(hooksData.map(h => [h.scriptId, { hookName: h.hookName, id: h.id }]));
+
+            const combinedScripts: Script[] = scriptsData.map(s => ({
+                ...s,
+                language: langEnumToString[s.language as any] || 'javascript', // Assuming language is number from API
+                hook: hooksMap.get(s.id)?.hookName || 'N/A',
+                hookId: hooksMap.get(s.id)?.id,
+            }));
+            
+            setScripts(combinedScripts);
+            if (combinedScripts.length > 0 && !activeScriptId) {
+                setActiveScriptId(combinedScripts[0].id);
+            } else if (combinedScripts.length === 0) {
+                setActiveScriptId(null);
+            }
+        } catch (error) {
+            console.error("Failed to fetch scripts or hooks", error);
+            alert("Falha ao carregar dados de script.");
+        } finally {
+            setLoading(false);
+        }
+    }, [activeScriptId]);
+
+    useEffect(() => {
+        fetchData();
+    }, []); // Fetch on mount
 
     useEffect(() => {
         const script = scripts.find(s => s.id === activeScriptId);
         setEditorState(script ? { ...script } : null);
     }, [activeScriptId, scripts]);
 
-    const handleSaveScript = () => {
+    const handleSaveScript = async () => {
         if (!editorState) return;
-        setScripts(prev => prev.map(s => s.id === editorState.id ? editorState : s));
-        alert('Script salvo com sucesso! (Simulação)');
+
+        try {
+            const originalScript = scripts.find(s => s.id === editorState.id);
+            const isNew = !originalScript;
+
+            if (isNew) {
+                const createCmd: CreateScriptCommand = {
+                    name: editorState.name,
+                    content: editorState.content,
+                    language: langStringToEnum[editorState.language as Language],
+                };
+                const newScriptId = await createScript(createCmd);
+                await createHook({ scriptId: newScriptId, hookName: editorState.hook });
+            } else {
+                const updateCmd: UpdateScriptCommand = {
+                    id: editorState.id,
+                    name: editorState.name,
+                    content: editorState.content,
+                    language: langStringToEnum[editorState.language as Language],
+                };
+                await updateScript(updateCmd);
+                if (originalScript.hook !== editorState.hook && originalScript.hookId) {
+                    await deleteHook(originalScript.hookId);
+                    await createHook({ scriptId: editorState.id, hookName: editorState.hook });
+                }
+            }
+            alert('Script salvo com sucesso!');
+            await fetchData();
+        } catch (error: any) {
+            alert(`Falha ao salvar script: ${error.message}`);
+        }
     };
 
     const handleNewScript = () => {
-        const newId = `script-${Date.now()}`;
+        const newId = `new-script-${Date.now()}`;
         const newScript: Script = {
             id: newId,
             name: 'Novo Script',
@@ -47,19 +114,24 @@ const ScriptingView: React.FC = () => {
         setActiveScriptId(newId);
     };
 
-    const handleDeleteScript = () => {
+    const handleDeleteScript = async () => {
         if (!activeScriptId || !editorState) return;
         if (!window.confirm(`Tem certeza que deseja excluir o script "${editorState.name}"?`)) return;
-
-        const currentIndex = scripts.findIndex(s => s.id === activeScriptId);
-        const newScripts = scripts.filter(s => s.id !== activeScriptId);
-        setScripts(newScripts);
         
-        if (newScripts.length === 0) {
+        try {
+            if (editorState.hookId) {
+                await deleteHook(editorState.hookId);
+            }
+            // Only try to delete from server if it's not a new unsaved script
+            if (!editorState.id.startsWith('new-script-')) {
+                await deleteScript(activeScriptId);
+            }
+            
             setActiveScriptId(null);
-        } else {
-            const nextIndex = currentIndex > 0 ? currentIndex - 1 : 0;
-            setActiveScriptId(newScripts[nextIndex].id);
+            await fetchData();
+
+        } catch (error: any) {
+             alert(`Falha ao excluir script: ${error.message}`);
         }
     };
 
@@ -72,9 +144,12 @@ const ScriptingView: React.FC = () => {
         return <ScriptingGuide onBack={() => setIsGuideVisible(false)} />;
     }
 
+    if (loading) {
+        return <div>Carregando scripts...</div>
+    }
+
     return (
         <div className="h-full flex flex-col lg:flex-row gap-6">
-            {/* Scripts List */}
             <div className="lg:w-1/3 xl:w-1/4 flex flex-col bg-light-card p-4 rounded-xl border border-gray-200">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-dark-text">Scripts Salvos</h3>
@@ -84,19 +159,13 @@ const ScriptingView: React.FC = () => {
                 </div>
                 <div className="flex-grow overflow-y-auto space-y-2 pr-2 -mr-2">
                     {scripts.map(script => (
-                        <button
-                            key={script.id}
-                            onClick={() => setActiveScriptId(script.id)}
-                            className={`w-full text-left p-3 rounded-lg transition-colors ${activeScriptId === script.id ? 'bg-primary/10' : 'hover:bg-gray-100'}`}
-                        >
+                        <button key={script.id} onClick={() => setActiveScriptId(script.id)} className={`w-full text-left p-3 rounded-lg transition-colors ${activeScriptId === script.id ? 'bg-primary/10' : 'hover:bg-gray-100'}`}>
                             <p className={`font-semibold text-sm truncate ${activeScriptId === script.id ? 'text-primary' : 'text-dark-text'}`}>{script.name}</p>
                             <p className="text-xs text-light-text">{script.hook} • {script.language}</p>
                         </button>
                     ))}
                 </div>
             </div>
-
-            {/* Editor */}
             <div className="flex-1 flex flex-col bg-light-card rounded-xl border border-gray-200">
                 {editorState ? (
                     <>
@@ -104,13 +173,7 @@ const ScriptingView: React.FC = () => {
                             <div className="flex-grow space-y-2">
                                  <div>
                                     <label htmlFor="scriptName" className="text-xs font-semibold text-light-text">NOME DO SCRIPT</label>
-                                    <input
-                                        id="scriptName"
-                                        type="text"
-                                        value={editorState.name}
-                                        onChange={(e) => handleEditorChange('name', e.target.value)}
-                                        className="w-full text-lg font-bold text-dark-text bg-transparent focus:outline-none border-b border-transparent focus:border-primary transition-colors"
-                                    />
+                                    <input id="scriptName" type="text" value={editorState.name} onChange={(e) => handleEditorChange('name', e.target.value)} className="w-full text-lg font-bold text-dark-text bg-transparent focus:outline-none border-b border-transparent focus:border-primary transition-colors"/>
                                 </div>
                                 <div className="flex items-center gap-6 text-sm">
                                     <div>
@@ -140,12 +203,7 @@ const ScriptingView: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex-grow p-4">
-                            <textarea
-                                value={editorState.content}
-                                onChange={e => handleEditorChange('content', e.target.value)}
-                                className="w-full h-full p-4 rounded-lg resize-none code-editor focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                                placeholder="// Escreva seu código aqui..."
-                            />
+                            <textarea value={editorState.content} onChange={e => handleEditorChange('content', e.target.value)} className="w-full h-full p-4 rounded-lg resize-none code-editor focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="// Escreva seu código aqui..."/>
                         </div>
                         <div className="p-4 border-t border-gray-200 flex justify-end">
                             <button onClick={handleSaveScript} className="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90">
