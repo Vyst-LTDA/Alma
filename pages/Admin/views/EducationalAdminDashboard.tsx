@@ -13,7 +13,7 @@ import AccountView from '../../Account/AccountView';
 import AnalyticsView from '../../Warehouse/views/AnalyticsView';
 import WarehouseDashboardContent from '../../Warehouse/views/WarehouseDashboardContent';
 import CustomAnalyticsView from './CustomAnalyticsView';
-import SuppliersView from '../../Warehouse/views/SuppliersView';
+import CustomersView from '../../Warehouse/views/SuppliersView';
 import LossesView from '../../Warehouse/views/LossesView';
 import StockControlView from '../../Warehouse/views/StockControlView';
 import RequestsManagementTable from '../../Warehouse/components/RequestsManagementTable';
@@ -52,7 +52,7 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
     { name: 'Comunicação', icon: MailIcon, view: 'communication' },
     { name: 'Requisições', icon: FileTextIcon, view: 'requests' },
     { name: 'Controle de Estoque', icon: ArchiveIcon, view: 'stock' },
-    { name: 'Clientes', icon: TruckIcon, view: 'suppliers' },
+    { name: 'Clientes', icon: TruckIcon, view: 'customers' },
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
     { name: 'Gerenciar Usuários', icon: UsersIcon, view: 'users' },
     { name: 'Criar Usuários', icon: UsersIcon, view: 'create-user' },
@@ -79,8 +79,8 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
         return <CustomAnalyticsView onBack={() => setCurrentView('analytics')} />;
       case 'stock':
         return <StockControlView userRole={userRole} userData={userData} />;
-      case 'suppliers':
-        return <SuppliersView userRole={userRole} />;
+      case 'customers':
+        return <CustomersView userRole={userRole} />;
       case 'losses':
         return <LossesView userRole="warehouse" />;
       case 'users':

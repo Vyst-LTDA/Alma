@@ -17,7 +17,7 @@ import ServerManagementView from './ServerManagementView';
 import CustomAnalyticsView from './CustomAnalyticsView';
 import StockControlView from '../../Warehouse/views/StockControlView';
 import UserManagementView from './UserManagementView';
-import SuppliersView from '../../Warehouse/views/SuppliersView';
+import CustomersView from '../../Warehouse/views/SuppliersView';
 import LossesView from '../../Warehouse/views/LossesView';
 import CreateUserView from './CreateUserView';
 
@@ -36,9 +36,9 @@ const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLog
   
   // FIX: Add missing 'id' property to userData state to match UserData type.
   const [userData, setUserData] = useState<UserData>({
-    id: 'admin-main-placeholder',
-    name: '',
-    avatar: '',
+    id: 'admin-main-placeholder-id',
+    name: 'Admin',
+    avatar: 'https://i.pravatar.cc/150?u=admin',
     email: 'admin@instituicao.edu',
     cpf: '000.000.000-00',
     linkedin: 'vyst-inc'
@@ -77,8 +77,8 @@ const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLog
         return <UserManagementView manageableRoles={['professor', 'admin']} />;
       case 'create-user':
         return <CreateUserView onUserCreated={handleAddNotification} creatableRoles={['professor', 'admin']} />;
-      case 'suppliers':
-        return <SuppliersView userRole={userRole} />;
+      case 'customers':
+        return <CustomersView userRole={userRole} />;
       case 'losses':
         return <LossesView userRole={userRole} />;
       case 'dashboard':

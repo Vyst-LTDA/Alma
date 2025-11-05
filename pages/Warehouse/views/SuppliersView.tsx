@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, CustomerDto, CreateCustomerCommand } from '../../../types';
 import { PlusIcon, TruckIcon } from '../../../components/shared/IconComponents';
-import SupplierModal from '../components/SupplierModal'; // Stays the same filename
+import CustomerModal from '../components/SupplierModal'; // Stays the same filename
 import { getCustomers, createCustomer } from '../../../services/apiService';
 
 const CustomerCard: React.FC<{ customer: CustomerDto }> = ({ customer }) => {
@@ -25,11 +25,11 @@ const CustomerCard: React.FC<{ customer: CustomerDto }> = ({ customer }) => {
     );
 };
 
-interface SuppliersViewProps {
+interface CustomersViewProps {
     userRole: UserRole;
 }
 
-const SuppliersView: React.FC<SuppliersViewProps> = ({ userRole }) => {
+const CustomersView: React.FC<CustomersViewProps> = ({ userRole }) => {
     // This view now handles Customers, not Suppliers.
     const [customers, setCustomers] = useState<CustomerDto[]>([]);
     const [loading, setLoading] = useState(true);
@@ -108,7 +108,7 @@ const SuppliersView: React.FC<SuppliersViewProps> = ({ userRole }) => {
             </div>
 
             {isModalOpen && userRole === 'admin' && (
-                <SupplierModal // Filename is kept, but it's a CustomerModal
+                <CustomerModal
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
                     onSave={handleSaveCustomer}
@@ -118,4 +118,4 @@ const SuppliersView: React.FC<SuppliersViewProps> = ({ userRole }) => {
     );
 };
 
-export default SuppliersView;
+export default CustomersView;

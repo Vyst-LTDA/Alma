@@ -70,28 +70,30 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
         const kpiData = { totalRequests, pendingRequests: 0, lowStockItems, fulfillmentRate };
         
         const chartsData = {
-             itemPopularityData: Object.entries(processedMovements.reduce((acc, mov) => {
+            // FIX: Use generic type argument on reduce to ensure correct type inference for `acc` and sort variables.
+             itemPopularityData: Object.entries(processedMovements.reduce<Record<string, number>>((acc, mov) => {
                 if (mov.type === 'CheckOut' && mov.itemName) {
                     acc[mov.itemName] = (acc[mov.itemName] || 0) + mov.quantity;
                 }
                 return acc;
-            }, {} as Record<string, number>))
+            }, {}))
             .sort(([,a],[,b]) => b - a).slice(0, 7)
             .map(([name, quantity]) => ({ name, requisições: quantity })),
 
-            peakTimesData: Object.entries(processedMovements.reduce((acc, mov) => {
+            peakTimesData: Object.entries(processedMovements.reduce<Record<string, number>>((acc, mov) => {
                 const day = new Date(mov.movementDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit'});
                 acc[day] = (acc[day] || 0) + 1;
                 return acc;
-            }, {} as Record<string, number>))
+            }, {}))
             .map(([name, value]) => ({ name, [scope === 'my' ? 'requisições' : 'entradas']: value }))
             .slice(-30),
 
-            byCategoryData: Object.entries(processedMovements.reduce((acc, mov) => {
-                const category = itemCategoryMap.get(mov.itemId) || 'Não categorizado';
+            byCategoryData: Object.entries(processedMovements.reduce<Record<string, number>>((acc, mov) => {
+                // FIX: Cast category to string to use as an index type
+                const category = String(itemCategoryMap.get(mov.itemId) || 'Não categorizado');
                 acc[category] = (acc[category] || 0) + 1;
                 return acc;
-            }, {} as Record<string, number>)).map(([name, value]) => ({ name, value })),
+            }, {})).map(([name, value]) => ({ name, value })),
             
             // Turnover is complex and cannot be calculated from API data. Keep mock.
             turnoverData: [

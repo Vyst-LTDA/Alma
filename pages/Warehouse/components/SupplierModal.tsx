@@ -7,7 +7,7 @@ interface CustomerModalProps {
   onSave: (customerData: CreateCustomerCommand) => void;
 }
 
-const SupplierModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, onSave }) => {
+const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, onSave }) => {
     // This modal now handles Customers, not Suppliers.
     // The API does not support editing customers, so this is a create-only modal.
     const [formData, setFormData] = useState({
@@ -96,4 +96,4 @@ const SupplierModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, onSave }
     );
 };
 
-export default SupplierModal;
+export default CustomerModal;

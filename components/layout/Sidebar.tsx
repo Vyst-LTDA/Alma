@@ -52,7 +52,7 @@ const professorNavItems: NavItemType[] = [
     { name: 'Comunicação', icon: MailIcon, view: 'communication' },
     { name: 'Requisições', icon: FileTextIcon, view: 'requests' },
     { name: 'Controle de Estoque', icon: ArchiveIcon, view: 'stock' },
-    { name: 'Clientes', icon: TruckIcon, view: 'suppliers' },
+    { name: 'Clientes', icon: TruckIcon, view: 'customers' },
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
 ];
 
@@ -62,7 +62,7 @@ const warehouseNavItems: NavItemType[] = [
     { name: 'Comunicação', icon: MailIcon, view: 'communication' },
     { name: 'Requisições', icon: FileTextIcon, view: 'requests' },
     { name: 'Controle de Estoque', icon: ArchiveIcon, view: 'stock' },
-    { name: 'Clientes', icon: TruckIcon, view: 'suppliers' },
+    { name: 'Clientes', icon: TruckIcon, view: 'customers' },
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
 ];
 
@@ -72,7 +72,7 @@ const adminNavItems: NavItemType[] = [
     { name: 'Comunicação', icon: MailIcon, view: 'communication' },
     { name: 'Requisições', icon: FileTextIcon, view: 'requests' },
     { name: 'Controle de Estoque', icon: ArchiveIcon, view: 'stock' },
-    { name: 'Clientes', icon: TruckIcon, view: 'suppliers' },
+    { name: 'Clientes', icon: TruckIcon, view: 'customers' },
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
     { name: 'Gerenciar Usuários', icon: UsersIcon, view: 'users' },
     { name: 'Criar Usuários', icon: UsersIcon, view: 'create-user' },

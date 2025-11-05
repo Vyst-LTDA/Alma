@@ -16,7 +16,7 @@ import ProfessorDashboard from './components/ProfessorDashboard';
 import AccountView from '../Account/AccountView';
 import AnalyticsView from '../Warehouse/views/AnalyticsView';
 import StockControlView from '../Warehouse/views/StockControlView';
-import SuppliersView from '../Warehouse/views/SuppliersView';
+import CustomersView from '../Warehouse/views/SuppliersView';
 import LossesView from '../Warehouse/views/LossesView';
 import CustomAnalyticsView from '../Admin/views/CustomAnalyticsView';
 
@@ -59,8 +59,8 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
       case 'stock':
         // FIX: Pass userData prop to satisfy StockControlViewProps requirements.
         return <StockControlView userRole={userRole} userData={userData} />;
-      case 'suppliers':
-        return <SuppliersView userRole={userRole} />;
+      case 'customers':
+        return <CustomersView userRole={userRole} />;
       case 'losses':
         return <LossesView userRole={userRole} />;
       case 'requests':

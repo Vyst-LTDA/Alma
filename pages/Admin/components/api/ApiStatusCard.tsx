@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-const ApiStatusCard: React.FC = () => {
-    const [status, setStatus] = useState<'OPERACIONAL' | 'VERIFICANDO...' | 'FALHA'>('OPERACIONAL');
+type ApiStatus = 'OPERACIONAL' | 'VERIFICANDO...' | 'FALHA';
 
-    const handleCheckStatus = () => {
-        setStatus('VERIFICANDO...');
-        setTimeout(() => {
-            setStatus('OPERACIONAL');
-        }, 1500);
-    };
+interface ApiStatusCardProps {
+    status: ApiStatus;
+    version: string;
+    onCheckStatus: () => void;
+}
 
+const ApiStatusCard: React.FC<ApiStatusCardProps> = ({ status, version, onCheckStatus }) => {
     const statusInfo = {
         'OPERACIONAL': { text: 'Operacional', color: 'bg-green-500', textColor: 'text-green-600' },
         'VERIFICANDO...': { text: 'Verificando...', color: 'bg-yellow-500', textColor: 'text-yellow-600' },
@@ -17,7 +16,7 @@ const ApiStatusCard: React.FC = () => {
     };
 
     return (
-        <div className="bg-light-card p-6 rounded-xl border border-gray-200 lg:col-span-2">
+        <div className="bg-light-card p-6 rounded-xl border border-gray-200">
             <h3 className="text-lg font-bold text-dark-text mb-4">Status da API</h3>
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -28,13 +27,13 @@ const ApiStatusCard: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className="font-semibold text-light-text">Versão</span>
-                    <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">Storia API v1.2.3</span>
+                    <span className="font-semibold text-light-text">Versão em Uso</span>
+                    <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">Storia API v{version}</span>
                 </div>
             </div>
             <div className="mt-6 border-t pt-4">
                 <button
-                    onClick={handleCheckStatus}
+                    onClick={onCheckStatus}
                     className="w-full px-4 py-2 text-sm font-semibold bg-gray-100 text-dark-text rounded-lg hover:bg-gray-200 transition"
                     disabled={status === 'VERIFICANDO...'}
                 >

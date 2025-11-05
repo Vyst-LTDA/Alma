@@ -12,7 +12,7 @@ import { PlusIcon } from '../../components/shared/IconComponents';
 import StockControlView from './views/StockControlView';
 import WarehouseDashboardContent from './views/WarehouseDashboardContent';
 import AnalyticsView from './views/AnalyticsView';
-import SuppliersView from './views/SuppliersView';
+import CustomersView from './views/SuppliersView';
 import LossesView from './views/LossesView';
 import CommunicationView from '../../components/communication/CommunicationView';
 import AccountView from '../Account/AccountView';
@@ -71,8 +71,8 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
             </div>
           </div>
         );
-      case 'suppliers':
-        return <SuppliersView userRole={userRole} />;
+      case 'customers':
+        return <CustomersView userRole={userRole} />;
       case 'losses':
         return <LossesView userRole={userRole} />;
       case 'communication':

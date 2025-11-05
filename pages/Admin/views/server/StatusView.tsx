@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { ArrowPathIcon, CheckCircleIcon } from '../../../../components/shared/IconComponents';
+import React, { useState, useEffect } from 'react';
+import { getSystemVersion } from '../../../../services/apiService';
+import ApiStatusCard from '../../components/api/ApiStatusCard';
 
 interface UpdateInfo {
-    // FIX: Add 'error' to the status type to match the parent component's definition.
     status: 'checking' | 'updated' | 'available' | 'error';
     currentVersion: string;
     latestVersion?: string;
@@ -14,62 +14,48 @@ interface StatusViewProps {
 }
 
 const StatusView: React.FC<StatusViewProps> = ({ updateInfo, onCheckVersion }) => {
-    const [apiStatus, setApiStatus] = useState<'OPERACIONAL' | 'VERIFICANDO...' | 'FALHA'>('OPERACIONAL');
+    const [apiStatus, setApiStatus] = useState<'OPERACIONAL' | 'VERIFICANDO...' | 'FALHA'>('VERIFICANDO...');
 
-    const handleCheckApiStatus = () => {
+    const handleCheckApiStatus = async () => {
         setApiStatus('VERIFICANDO...');
-        setTimeout(() => {
+        try {
+            await getSystemVersion();
             setApiStatus('OPERACIONAL');
-        }, 1500);
+        } catch (error) {
+            console.error("API status check failed:", error);
+            setApiStatus('FALHA');
+        }
     };
-    
-    const apiStatusInfo = {
-        'OPERACIONAL': { text: 'Operacional', color: 'bg-green-500', textColor: 'text-green-600' },
-        'VERIFICANDO...': { text: 'Verificando...', color: 'bg-yellow-500', textColor: 'text-yellow-600' },
-        'FALHA': { text: 'Fora de Operação', color: 'bg-red-500', textColor: 'text-red-600' },
-    };
+
+    useEffect(() => {
+        handleCheckApiStatus();
+    }, []);
 
     return (
         <div className="h-full flex flex-col gap-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* API Status Card */}
-                <div className="bg-light-card p-6 rounded-xl border border-gray-200">
-                    <h3 className="text-lg font-bold text-dark-text mb-4">Status da API</h3>
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <span className="font-semibold text-light-text">Status Atual</span>
-                            <div className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full ${apiStatusInfo[apiStatus].color}`}></div>
-                                <span className={`font-bold ${apiStatusInfo[apiStatus].textColor}`}>{apiStatusInfo[apiStatus].text}</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="font-semibold text-light-text">Versão em Uso</span>
-                            <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">Storia API v{updateInfo.currentVersion}</span>
-                        </div>
-                    </div>
-                    <div className="mt-6 border-t pt-4">
-                        <button
-                            onClick={handleCheckApiStatus}
-                            className="w-full px-4 py-2 text-sm font-semibold bg-gray-100 text-dark-text rounded-lg hover:bg-gray-200 transition"
-                            disabled={apiStatus === 'VERIFICANDO...'}
-                        >
-                            {apiStatus === 'VERIFICANDO...' ? 'Verificando...' : 'Verificar Status Novamente'}
-                        </button>
-                    </div>
-                </div>
+                <ApiStatusCard 
+                    status={apiStatus}
+                    version={apiStatus === 'FALHA' ? 'Erro' : updateInfo.currentVersion}
+                    onCheckStatus={handleCheckApiStatus}
+                />
 
-                 {/* Rate Limiting Card */}
                 <div className="bg-light-card p-6 rounded-xl border border-gray-200">
                     <h3 className="text-lg font-bold text-dark-text mb-4">Limites de Taxa (Rate Limiting)</h3>
-                    <form className="space-y-3">
+                    <p className="text-sm text-light-text mb-6">Configure os limites de requisições para proteger a API contra abuso e garantir a estabilidade.</p>
+                    <form className="space-y-4">
                          <div>
-                             <label htmlFor="reqPerMinute" className="block text-sm font-medium text-light-text mb-1">Requisições por Minuto</label>
+                             <label htmlFor="reqPerMinute" className="block text-sm font-medium text-dark-text mb-1">Requisições por Minuto</label>
                              <input type="number" id="reqPerMinute" defaultValue="1000" className="w-full px-3 py-2 bg-white text-black border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"/>
                          </div>
                          <div>
-                             <label htmlFor="burst" className="block text-sm font-medium text-light-text mb-1">Pico de Requisições (Burst)</label>
+                             <label htmlFor="burst" className="block text-sm font-medium text-dark-text mb-1">Pico de Requisições (Burst)</label>
                              <input type="number" id="burst" defaultValue="200" className="w-full px-3 py-2 bg-white text-black border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"/>
+                         </div>
+                         <div className="flex justify-end pt-4">
+                            <button type="submit" className="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90">
+                                Salvar Alterações
+                            </button>
                          </div>
                     </form>
                 </div>

@@ -4,12 +4,12 @@
  *
 */
 import React, { useState, useMemo, useEffect } from 'react';
-import { Request, UserData, MovementDto } from '../../../types';
+import { Request, UserData, MovementDto, ItemDto } from '../../../types';
 import StatusBadge from '../../../components/shared/StatusBadge';
 import { SearchIcon, DotsVerticalIcon } from '../../../components/shared/IconComponents';
-import { getMovementsByUser } from '../../../services/apiService';
+import { getMovementsByUser, getItems } from '../../../services/apiService';
 
-const mapMovementDtoToRequest = (dto: MovementDto): Request => ({
+const mapMovementDtoToRequest = (dto: MovementDto, itemMap: Map<string, ItemDto>): Request => ({
     id: dto.id,
     item: dto.itemName || 'N/A',
     quantity: dto.quantity,
@@ -17,8 +17,8 @@ const mapMovementDtoToRequest = (dto: MovementDto): Request => ({
     status: 'Entregue', // Assuming all movements are completed checkouts
     requestDate: new Date(dto.movementDate).toLocaleDateString('pt-BR'),
     type: dto.type === 'CheckOut' ? 'Uso Contínuo' : 'Entrada',
-    category: 'N/A', // This info isn't in MovementDto
-    unit: 'UN' // This info isn't in MovementDto
+    category: itemMap.get(dto.itemId)?.attributes?.category || 'N/A',
+    unit: itemMap.get(dto.itemId)?.attributes?.unitOfMeasure || 'UN'
 });
 
 const ActionMenu: React.FC<{ request: Request }> = ({ request }) => {
@@ -62,9 +62,18 @@ const MyRequestsTable: React.FC<MyRequestsTableProps> = ({ userData, refreshKey 
             setLoading(true);
             setError(null);
             try {
-                const movements = await getMovementsByUser(userData.id);
+                const [movements, itemsResult] = await Promise.all([
+                    getMovementsByUser(userData.id),
+                    getItems({ pageSize: 1000 })
+                ]);
+
+                const itemMap = new Map(itemsResult.items.map(i => [i.id, i]));
+                
                 // The endpoint returns all movements, so we filter for checkouts (user requests) client-side.
-                const userRequests = movements.filter(m => m.type === 'CheckOut').map(mapMovementDtoToRequest);
+                const userRequests = movements
+                    .filter(m => m.type === 'CheckOut')
+                    .map(dto => mapMovementDtoToRequest(dto, itemMap));
+                    
                 setRequests(userRequests);
             } catch (err: any) {
                 setError(err.message || "Falha ao buscar requisições.");
