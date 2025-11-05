@@ -94,7 +94,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                      {/* Footer link */}
                     <div className="text-center text-xs text-white/60 pt-4">
                         <p>
-                            Copyright © 2025, Vyst Inc. &bull;{' '}
+                            Copyright © 2025, Vyst Ltda. &bull;{' '}
                             <button onClick={() => setIsAboutModalOpen(true)} className="hover:text-white hover:underline">
                                 Sobre o Alma
                             </button>
