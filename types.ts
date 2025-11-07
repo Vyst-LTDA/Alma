@@ -319,3 +319,18 @@ export interface AuditLogDto {
 }
 
 export type AuditLogDtoPagedResult = PagedResult<AuditLogDto>;
+
+
+// Types for Script Testing
+export interface TestScriptCommand {
+  scriptContent: string;
+  context: object;
+  language: number;
+}
+
+export interface TestScriptResultDto {
+  logs?: string[];
+  returnValue?: string; // Serialized result
+  error?: string | null;
+  executionTimeMs?: number;
+}

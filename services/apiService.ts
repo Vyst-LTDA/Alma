@@ -16,7 +16,9 @@ import {
     CreateApiKeyRequestDto,
     ApiKeyCreatedDto,
     UpdateUserRequestDto,
-    AuditLogDtoPagedResult
+    AuditLogDtoPagedResult,
+    TestScriptCommand,
+    TestScriptResultDto
 } from '../types';
 
 // The API is served from the same origin, so we use a relative path.
@@ -242,6 +244,16 @@ export const deleteScript = async (id: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/api/v1/scripts/${id}`, { method: 'DELETE' });
     return handleResponse<void>(response);
 };
+
+export const testScript = async (testData: TestScriptCommand): Promise<TestScriptResultDto> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/scripts/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testData),
+    });
+    return handleResponse<TestScriptResultDto>(response);
+};
+
 
 // --- Hooks ---
 export const getHooks = async (): Promise<HookDto[]> => {
