@@ -81,16 +81,23 @@ export interface Supplier {
     category: string; // e.g., 'Eletrônicos', 'Material de Escritório'
 }
 
-export interface LossRecord {
+export interface LossDto {
     id: string;
     itemCode: string;
     itemName: string;
     quantity: number;
-    report: string;
+    reason: string;
     wasInStock: boolean;
-    recordedBy: UserRole;
-    date: string;
+    recordedBy: string; // User Name
+    lossDate: string; // ISO Date String
     category?: string;
+}
+
+export interface CreateLossDto {
+    itemId: string;
+    quantity: number;
+    reason: string;
+    wasInStock: boolean;
 }
 
 // Types for Customers from API
@@ -146,6 +153,11 @@ export interface CreateItemRequestDto {
     attributes?: { [key: string]: any };
 }
 
+export interface UpdateItemRequestDto {
+    name: string;
+    attributes?: { [key: string]: any };
+}
+
 // Generic Paged Result
 export interface PagedResult<T> {
     items: T[];
@@ -186,6 +198,13 @@ export interface ChangePasswordRequestDto {
     currentPassword: string;
     newPassword: string;
     confirmNewPassword: string;
+}
+
+export interface UpdateUserRequestDto {
+    fullName?: string;
+    email?: string;
+    role?: string;
+    isActive?: boolean;
 }
 
 export type UserDtoPagedResult = PagedResult<UserDto>;
@@ -267,3 +286,36 @@ export interface CreateWebhookSubscriptionCommand {
     eventType: string;
     targetUrl: string;
 }
+
+// Types for API Keys
+export interface ApiKeyDto {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  permissions: string;
+  createdAt: string;
+  isActive: boolean;
+}
+
+export interface CreateApiKeyRequestDto {
+  name: string;
+  permissions: 'read-write' | 'read-only';
+}
+
+export interface ApiKeyCreatedDto {
+    id: string;
+    fullKey: string;
+    key: ApiKeyDto;
+}
+
+// Types for Audit Logs (inferred)
+export interface AuditLogDto {
+    id: string;
+    timestamp: string;
+    userId: string;
+    userFullName: string | null;
+    eventType: string;
+    details: string;
+}
+
+export type AuditLogDtoPagedResult = PagedResult<AuditLogDto>;

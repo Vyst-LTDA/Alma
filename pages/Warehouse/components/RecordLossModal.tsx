@@ -4,25 +4,23 @@
  *
 */
 import React, { useState, useEffect } from 'react';
-import { mockLossRecords } from '../../../data/mockData';
-import { LossRecord, UserRole, ItemDto } from '../../../types';
-import { generateDailyId } from '../../../utils/idGenerator';
-import { getItems } from '../../../services/apiService';
+import { LossDto, UserRole, ItemDto, CreateLossDto } from '../../../types';
+import { getItems, createLoss } from '../../../services/apiService';
 
 interface RecordLossModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userRole: UserRole;
   onLossRecorded: () => void;
 }
 
-const RecordLossModal: React.FC<RecordLossModalProps> = ({ isOpen, onClose, userRole, onLossRecorded }) => {
+const RecordLossModal: React.FC<RecordLossModalProps> = ({ isOpen, onClose, onLossRecorded }) => {
     const [selectedItemId, setSelectedItemId] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [wasInStock, setWasInStock] = useState(false);
     const [report, setReport] = useState('');
     const [inventoryItems, setInventoryItems] = useState<ItemDto[]>([]);
     const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -49,7 +47,7 @@ const RecordLossModal: React.FC<RecordLossModalProps> = ({ isOpen, onClose, user
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const selectedItem = inventoryItems.find(item => item.id === selectedItemId);
 
@@ -63,25 +61,24 @@ const RecordLossModal: React.FC<RecordLossModalProps> = ({ isOpen, onClose, user
             return;
         }
 
-        // Create new loss record (mocked, as no API endpoint exists)
-        const newLossRecord: LossRecord = {
-            id: generateDailyId('LOSS', mockLossRecords),
-            itemCode: selectedItem.sku,
-            itemName: selectedItem.name,
-            quantity,
-            report,
-            wasInStock,
-            recordedBy: userRole,
-            date: new Date().toLocaleDateString('pt-BR'),
-        };
-        mockLossRecords.unshift(newLossRecord);
-        
-        // In a real application, an API call would be made here to record the loss,
-        // which would then trigger a stock update on the backend if 'wasInStock' is true.
-        // Since there's no endpoint for losses, we only update the mock data and call the refresh handler.
-        
-        onLossRecorded();
-        onClose();
+        setSubmitting(true);
+        try {
+            const newLossData: CreateLossDto = {
+                itemId: selectedItemId,
+                quantity,
+                reason: report,
+                wasInStock
+            };
+
+            await createLoss(newLossData);
+            
+            onLossRecorded();
+            onClose();
+        } catch (err: any) {
+            alert(`Erro ao registrar perda: ${err.message}`);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -143,7 +140,9 @@ const RecordLossModal: React.FC<RecordLossModalProps> = ({ isOpen, onClose, user
                     </div>
                     <div className="flex justify-end gap-3 pt-4 border-t mt-4">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-dark-text font-semibold rounded-lg hover:bg-gray-300">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90">Confirmar Registro</button>
+                        <button type="submit" disabled={submitting} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:bg-gray-400">
+                            {submitting ? 'Registrando...' : 'Confirmar Registro'}
+                        </button>
                     </div>
                 </form>
             </div>

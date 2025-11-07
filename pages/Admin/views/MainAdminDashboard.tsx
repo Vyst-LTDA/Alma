@@ -20,6 +20,7 @@ import UserManagementView from './UserManagementView';
 import CustomersView from '../../Warehouse/views/SuppliersView';
 import LossesView from '../../Warehouse/views/LossesView';
 import CreateUserView from './CreateUserView';
+import AuditLogView from './AuditLogView';
 
 interface MainAdminDashboardProps {
   userRole: UserRole;
@@ -81,6 +82,8 @@ const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLog
         return <CustomersView userRole={userRole} />;
       case 'losses':
         return <LossesView userRole={userRole} />;
+      case 'audit-log':
+        return <AuditLogView />;
       case 'dashboard':
       default:
         return <WarehouseDashboardContent userRole={userRole} onNavigate={handleNavigate} userData={userData} />;

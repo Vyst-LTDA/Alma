@@ -1,7 +1,49 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { UserDto, UserRole } from '../../../types';
-import { getUsers } from '../../../services/apiService';
-import { SearchIcon, DotsVerticalIcon, UserCircleIcon } from '../../../components/shared/IconComponents';
+import { getUsers, deleteUser } from '../../../services/apiService';
+import { SearchIcon, DotsVerticalIcon, UserCircleIcon, PencilIcon, TrashIcon } from '../../../components/shared/IconComponents';
+import EditUserModal from '../components/users/EditUserModal';
+
+const ActionMenu: React.FC<{ user: UserDto, onEdit: (user: UserDto) => void, onDelete: (user: UserDto) => void }> = ({ user, onEdit, onDelete }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div className="relative" ref={menuRef}>
+            <button onClick={() => setIsOpen(!isOpen)} className="p-2 rounded-full hover:bg-gray-200">
+                <DotsVerticalIcon className="w-5 h-5 text-gray-500" />
+            </button>
+            {isOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                    <ul className="py-1">
+                        <li>
+                            <button onClick={() => { onEdit(user); setIsOpen(false); }} className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-dark-text hover:bg-gray-100">
+                                <PencilIcon className="w-4 h-4" />
+                                Editar
+                            </button>
+                        </li>
+                        <li>
+                            <button onClick={() => { onDelete(user); setIsOpen(false); }} className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <TrashIcon className="w-4 h-4" />
+                                Excluir
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+};
 
 interface UserManagementViewProps {
     manageableRoles: UserRole[];
@@ -13,6 +55,10 @@ const UserManagementView: React.FC<UserManagementViewProps> = ({ manageableRoles
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [userToEdit, setUserToEdit] = useState<UserDto | null>(null);
 
     const roleNames: { [key: string]: string } = {
         professor: 'Docente',
@@ -25,21 +71,16 @@ const UserManagementView: React.FC<UserManagementViewProps> = ({ manageableRoles
             setLoading(true);
             setError(null);
             try {
-                // In a real app with many users, you'd implement pagination controls.
-                // For now, fetching a large page size to get all relevant users.
-                const result = await getUsers({ 
-                    pageNumber: 1, 
-                    pageSize: 100, 
-                    searchTerm: searchTerm 
+                const result = await getUsers({
+                    pageNumber: 1,
+                    pageSize: 100,
+                    searchTerm: searchTerm
                 });
                 
                 let fetchedUsers = result.items;
-
-                // Client-side filtering for role as the mock API might not support it
                 if (roleFilter !== 'all') {
                     fetchedUsers = fetchedUsers.filter(user => user.role && user.role.toLowerCase() === roleFilter);
                 }
-
                 setUsers(fetchedUsers);
             } catch (err: any) {
                 setError(err.message || 'Falha ao buscar usuários.');
@@ -53,7 +94,30 @@ const UserManagementView: React.FC<UserManagementViewProps> = ({ manageableRoles
         }, 300);
 
         return () => clearTimeout(debounceFetch);
-    }, [searchTerm, roleFilter, manageableRoles]);
+    }, [searchTerm, roleFilter, manageableRoles, refreshKey]);
+
+    const handleEdit = (user: UserDto) => {
+        setUserToEdit(user);
+        setIsEditModalOpen(true);
+    };
+
+    const handleDelete = async (user: UserDto) => {
+        if (window.confirm(`Tem certeza que deseja excluir o usuário "${user.fullName}"? Esta ação não pode ser desfeita.`)) {
+            try {
+                await deleteUser(user.id);
+                setUsers(prev => prev.filter(u => u.id !== user.id));
+                alert("Usuário excluído com sucesso.");
+            } catch (err: any) {
+                setError(err.message || "Falha ao excluir usuário.");
+            }
+        }
+    };
+    
+    const handleSave = () => {
+        setIsEditModalOpen(false);
+        setUserToEdit(null);
+        setRefreshKey(prev => prev + 1); // Trigger a re-fetch
+    };
 
     const roleFilterOptions = manageableRoles.map(role => ({
         value: role,
@@ -130,9 +194,7 @@ const UserManagementView: React.FC<UserManagementViewProps> = ({ manageableRoles
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center">
-                                                <button className="p-2 rounded-full hover:bg-gray-100">
-                                                    <DotsVerticalIcon className="w-5 h-5 text-gray-500" />
-                                                </button>
+                                                <ActionMenu user={user} onEdit={handleEdit} onDelete={handleDelete} />
                                             </div>
                                         </td>
                                     </tr>
@@ -147,6 +209,15 @@ const UserManagementView: React.FC<UserManagementViewProps> = ({ manageableRoles
                     )}
                 </div>
             </div>
+            {isEditModalOpen && userToEdit && (
+                <EditUserModal 
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    user={userToEdit}
+                    onSave={handleSave}
+                    manageableRoles={manageableRoles}
+                />
+            )}
         </div>
     );
 };

@@ -3,7 +3,7 @@ import RegisterItemForm from '../components/RegisterItemForm';
 import StockItemsTable from '../components/StockItemsTable';
 import { PlusIcon, ArchiveIcon, ArrowUturnLeftIcon } from '../../../components/shared/IconComponents';
 // FIX: Removed unused 'Request' type.
-import { UserRole, UserData } from '../../../types';
+import { UserRole, UserData, ItemDto } from '../../../types';
 import RequestsManagementTable from '../components/RequestsManagementTable';
 // FIX: Removed unused 'allRequests' import which was causing an error.
 import AddStockEntryModal from '../components/AddStockEntryModal';
@@ -68,6 +68,7 @@ interface StockControlViewProps {
 
 const StockControlView: React.FC<StockControlViewProps> = ({ userRole, userData }) => {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState<ItemDto | null>(null);
     const [currentSubView, setCurrentSubView] = useState<'main' | 'entries'>('main');
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -78,6 +79,17 @@ const StockControlView: React.FC<StockControlViewProps> = ({ userRole, userData 
     const handleItemRegistered = () => {
       setRefreshKey(prev => prev + 1);
     };
+
+    const handleOpenEditModal = (item: ItemDto) => {
+        setItemToEdit(item);
+        setIsRegisterModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsRegisterModalOpen(false);
+        setItemToEdit(null);
+    };
+
 
     return (
         <div className="h-full flex flex-col">
@@ -104,10 +116,17 @@ const StockControlView: React.FC<StockControlViewProps> = ({ userRole, userData 
             </div>
             
             <div className="flex-grow">
-                <StockItemsTable refreshKey={refreshKey} />
+                <StockItemsTable refreshKey={refreshKey} onEditItem={handleOpenEditModal} />
             </div>
 
-            {isRegisterModalOpen && <RegisterItemForm isOpen={isRegisterModalOpen} onClose={() => setIsRegisterModalOpen(false)} onItemRegistered={handleItemRegistered} />}
+            {isRegisterModalOpen && (
+              <RegisterItemForm 
+                isOpen={isRegisterModalOpen} 
+                onClose={handleCloseModal} 
+                onItemRegistered={handleItemRegistered} 
+                itemToEdit={itemToEdit}
+              />
+            )}
         </div>
     );
 }

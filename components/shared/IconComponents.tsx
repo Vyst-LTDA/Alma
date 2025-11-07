@@ -276,6 +276,12 @@ export const CQRSFlowIcon: React.FC<IconProps> = (props) => (
     </svg>
 );
 
+export const PencilIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 19.07a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+    </svg>
+);
+
 
 // Alma Logo
 export const ERPLogo: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = (props) => (

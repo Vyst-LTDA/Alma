@@ -16,7 +16,8 @@ import {
     CodeBracketIcon,
     ExclamationTriangleIcon,
     Cog6ToothIcon,
-    ArrowUturnLeftIcon
+    ArrowUturnLeftIcon,
+    ClipboardDocumentIcon
 } from '../shared/IconComponents';
 
 const NavItem: React.FC<{ item: NavItemType, currentView: string, onNavigate: (view: string) => void }> = ({ item, currentView, onNavigate }) => {
@@ -76,6 +77,7 @@ const adminNavItems: NavItemType[] = [
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
     { name: 'Gerenciar Usuários', icon: UsersIcon, view: 'users' },
     { name: 'Criar Usuários', icon: UsersIcon, view: 'create-user' },
+    { name: 'Logs de Auditoria', icon: ClipboardDocumentIcon, view: 'audit-log' },
     { name: 'Gerenciar Servidor', icon: Cog6ToothIcon, view: 'server-management' },
 ];
 

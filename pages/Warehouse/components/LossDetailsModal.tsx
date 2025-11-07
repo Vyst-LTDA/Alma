@@ -4,12 +4,12 @@
  *
 */
 import React from 'react';
-import { LossRecord } from '../../../types';
+import { LossDto } from '../../../types';
 
 interface LossDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  lossRecord: LossRecord | null;
+  lossRecord: LossDto | null;
 }
 
 const LossDetailsModal: React.FC<LossDetailsModalProps> = ({ isOpen, onClose, lossRecord }) => {
@@ -40,7 +40,7 @@ const LossDetailsModal: React.FC<LossDetailsModalProps> = ({ isOpen, onClose, lo
             </div>
             <div>
               <p className="font-semibold text-light-text">Data</p>
-              <p className="text-dark-text">{lossRecord.date}</p>
+              <p className="text-dark-text">{new Date(lossRecord.lossDate).toLocaleDateString('pt-BR')}</p>
             </div>
              <div>
               <p className="font-semibold text-light-text">Registrado por</p>
@@ -49,7 +49,7 @@ const LossDetailsModal: React.FC<LossDetailsModalProps> = ({ isOpen, onClose, lo
           </div>
           <div>
               <p className="font-semibold text-light-text">Relatório</p>
-              <p className="text-dark-text bg-gray-50 p-3 rounded-lg border mt-1 whitespace-pre-wrap">{lossRecord.report}</p>
+              <p className="text-dark-text bg-gray-50 p-3 rounded-lg border mt-1 whitespace-pre-wrap">{lossRecord.reason}</p>
           </div>
         </div>
         <div className="flex justify-end mt-6 pt-4 border-t">

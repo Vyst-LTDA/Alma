@@ -3,7 +3,8 @@
  * All rights reserved.
  *
 */
-import { Request, LossRecord } from '../types';
+// FIX: The 'LossRecord' type is not exported from '../types' and was causing an error.
+// The entire import statement was removed as 'Request' was also unused in this file.
 
 type ItemWithId = { id: string };
 

@@ -8,7 +8,15 @@ import {
     UserDtoPagedResult, MovementDto, MovementDtoPagedResult, RegisterMovementRequestDto, 
     UpdateProfileRequestDto, ChangePasswordRequestDto, VersionInfo, UpdateStatusInfo, 
     ScriptDto, CreateScriptCommand, UpdateScriptCommand, HookDto, CreateHookCommand, 
-    WebhookSubscriptionDto, CreateWebhookSubscriptionCommand, CustomerDtoPagedResult, CreateCustomerCommand
+    WebhookSubscriptionDto, CreateWebhookSubscriptionCommand, CustomerDtoPagedResult, CreateCustomerCommand,
+    UpdateItemRequestDto,
+    LossDto,
+    CreateLossDto,
+    ApiKeyDto,
+    CreateApiKeyRequestDto,
+    ApiKeyCreatedDto,
+    UpdateUserRequestDto,
+    AuditLogDtoPagedResult
 } from '../types';
 
 // The API is served from the same origin, so we use a relative path.
@@ -71,6 +79,23 @@ export const createItem = async (itemData: CreateItemRequestDto): Promise<any> =
     return handleResponse<any>(response);
 };
 
+export const updateItem = async (id: string, itemData: UpdateItemRequestDto): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Items/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData),
+    });
+    return handleResponse<void>(response);
+};
+
+export const deleteItem = async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Items/${id}`, {
+        method: 'DELETE',
+    });
+    return handleResponse<void>(response);
+};
+
+
 // --- Users ---
 export const getUsers = async (params: { pageNumber?: number, pageSize?: number, searchTerm?: string, sortBy?: string, sortOrder?: string }): Promise<UserDtoPagedResult> => {
     const query = new URLSearchParams();
@@ -90,6 +115,22 @@ export const createUser = async (userData: RegisterUserRequestDto): Promise<User
         body: JSON.stringify(userData),
     });
     return handleResponse<UserDto>(response);
+};
+
+export const updateUser = async (id: string, userData: UpdateUserRequestDto): Promise<UserDto> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+    });
+    return handleResponse<UserDto>(response);
+};
+
+export const deleteUser = async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/Users/${id}`, {
+        method: 'DELETE',
+    });
+    return handleResponse<void>(response);
 };
 
 export const updateCurrentUserProfile = async (profileData: UpdateProfileRequestDto): Promise<UserDto> => {
@@ -240,4 +281,82 @@ export const createWebhook = async (webhookData: CreateWebhookSubscriptionComman
 export const deleteWebhook = async (id: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/api/v1/webhooks/${id}`, { method: 'DELETE' });
     return handleResponse<void>(response);
+};
+
+// --- API Keys ---
+export const getApiKeys = async (): Promise<ApiKeyDto[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/apikeys`);
+        if (response.status === 404) return [];
+        return handleResponse<ApiKeyDto[]>(response);
+    } catch (e) {
+        console.warn("getApiKeys falhou, retornando array vazio. O endpoint pode não estar implementado no backend.", e);
+        return [];
+    }
+};
+
+export const createApiKey = async (keyData: CreateApiKeyRequestDto): Promise<ApiKeyCreatedDto> => {
+    const response = await fetch(`${API_BASE_URL}/api/apikeys`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(keyData),
+    });
+    return handleResponse<ApiKeyCreatedDto>(response);
+};
+
+export const deleteApiKey = async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/apikeys/${id}`, {
+        method: 'DELETE',
+    });
+    return handleResponse<void>(response);
+};
+
+
+// --- Losses ---
+export const getLosses = async (): Promise<LossDto[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/losses`);
+        if (response.status === 404) return [];
+        return handleResponse<LossDto[]>(response);
+    } catch (e) {
+        console.warn("getLosses falhou, retornando array vazio. O endpoint pode não estar implementado no backend.", e);
+        return [];
+    }
+};
+
+export const createLoss = async (lossData: CreateLossDto): Promise<LossDto> => {
+    const response = await fetch(`${API_BASE_URL}/api/losses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lossData),
+    });
+    return handleResponse<LossDto>(response);
+};
+
+export const deleteLoss = async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/losses/${id}`, {
+        method: 'DELETE',
+    });
+    return handleResponse<void>(response);
+};
+
+// --- Audit Logs ---
+export const getAuditLogs = async (params: { 
+    pageNumber?: number, 
+    pageSize?: number, 
+    startDate?: string, 
+    endDate?: string, 
+    userId?: string, 
+    eventType?: string 
+}): Promise<AuditLogDtoPagedResult> => {
+    const query = new URLSearchParams();
+    if (params.pageNumber) query.append('Page', params.pageNumber.toString());
+    if (params.pageSize) query.append('PageSize', params.pageSize.toString());
+    if (params.startDate) query.append('StartDate', params.startDate);
+    if (params.endDate) query.append('EndDate', params.endDate);
+    if (params.userId) query.append('UserId', params.userId);
+    if (params.eventType) query.append('EventType', params.eventType);
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/audit?${query.toString()}`);
+    return handleResponse<AuditLogDtoPagedResult>(response);
 };

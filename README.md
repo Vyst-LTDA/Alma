@@ -1,13 +1,20 @@
-# ALMA - WEB-TS BASED ERP/CRM USING STORIA-API BACK-END.
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-copyright © 2025 Vyst-LTDA.
+# Run and deploy your AI Studio app
 
-copyright © Antonio a. Meloni
+This contains everything you need to run your app locally.
 
-copyright © Pedro h. Garcia.
+View your app in AI Studio: https://ai.studio/apps/drive/1JczXOFB3ANvY04HWLKmh3c12nyYOmbEA
 
-## PROTECTED BY LAW & EULA. 
+## Run Locally
 
-Protected by Software Engineering Licenses and Vyst-LTDA EULA.
+**Prerequisites:**  Node.js
 
-Distributing source code of this application out of Vyst Organization or AI services (Like Gemini, AI-STUDIO, Jules-Bot) constitutes a Crime.
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
