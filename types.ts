@@ -100,6 +100,12 @@ export interface CreateLossDto {
     wasInStock: boolean;
 }
 
+export interface UpdateLossDto {
+    quantity: number;
+    reason: string;
+    wasInStock: boolean;
+}
+
 // Types for Customers from API
 export interface AddressInfo {
     street?: string;
@@ -108,6 +114,8 @@ export interface AddressInfo {
     postalCode?: string;
     country?: string;
 }
+
+export interface Address extends AddressInfo {}
 
 export interface CreateCustomerCommand {
     tenantId: string;
@@ -275,6 +283,17 @@ export interface CreateHookCommand {
     hookName: string;
 }
 
+export interface UpdateHookCommand {
+    id: string;
+    hookName: string;
+    scriptId: string;
+}
+
+export interface TestScriptCommand {
+    scriptContent: string;
+    context: any;
+}
+
 export interface WebhookSubscriptionDto {
     id: string;
     eventType: string;
@@ -319,3 +338,338 @@ export interface AuditLogDto {
 }
 
 export type AuditLogDtoPagedResult = PagedResult<AuditLogDto>;
+
+
+// --- START: Added types from Swagger.json ---
+
+// Types for Attribute Mapping
+export interface CreateAttributeMappingCommand {
+    identityProviderId: string;
+    sourceClaim: string;
+    targetProperty: string;
+}
+
+// Types for Financials
+export enum AccountType {
+    Asset = 1,
+    Liability = 2,
+    Equity = 3,
+    Revenue = 4,
+    Expense = 5
+}
+
+export interface AccountDto {
+    id: string;
+    tenantId: string;
+    name: string;
+    code: string;
+    type: AccountType;
+    parentAccountId?: string;
+    isActive: boolean;
+    currentBalance: number;
+}
+
+export type AccountDtoPagedResult = PagedResult<AccountDto>;
+
+export interface CreateAccountCommand {
+    tenantId: string;
+    name: string;
+    code: string;
+    type: AccountType;
+    parentAccountId?: string;
+}
+
+export interface TransactionLine {
+    accountId: string;
+    debit: number;
+    credit: number;
+}
+
+export interface CreateJournalEntryCommand {
+    tenantId: string;
+    date: string; // ISO date string
+    description: string;
+    transactions: TransactionLine[];
+    correlationId: string;
+}
+
+export interface GeneralLedgerEntryDto {
+    transactionId: string;
+    journalEntryId: string;
+    date: string; // ISO date string
+    description: string;
+    accountId: string;
+    accountName: string;
+    accountCode: string;
+    debit: number;
+    credit: number;
+    balanceAfterTransaction: number;
+}
+
+export type GeneralLedgerEntryDtoPagedResult = PagedResult<GeneralLedgerEntryDto>;
+
+// Types for Identity Providers
+export enum FederationProtocol {
+    OpenIdConnect = 0,
+    Saml2 = 1
+}
+
+export interface CreateIdentityProviderCommand {
+    name: string;
+    displayName: string;
+    protocol: FederationProtocol;
+    isEnabled: boolean;
+    clientId?: string;
+    clientSecret?: string;
+    authority?: string;
+    scopes?: string;
+    metadataUrl?: string;
+    entityId?: string;
+}
+
+export interface UpdateIdentityProviderCommand {
+    id: string;
+    displayName: string;
+    isEnabled: boolean;
+    clientId?: string;
+    clientSecret?: string;
+    authority?: string;
+    scopes?: string;
+    metadataUrl?: string;
+    entityId?: string;
+}
+
+// Types for Invoices
+export enum InvoiceStatus {
+    Draft = 0,
+    Sent = 1,
+    Paid = 2,
+    Overdue = 3,
+    Void = 4
+}
+
+export interface InvoiceLineItemDto {
+    id: string;
+    itemId: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+}
+
+export interface InvoiceDto {
+    id: string;
+    tenantId: string;
+    salesOrderId: string;
+    customerId: string;
+    customerName: string;
+    issueDate: string; // ISO date string
+    dueDate: string; // ISO date string
+    status: InvoiceStatus;
+    totalAmount: number;
+    lineItems: InvoiceLineItemDto[];
+}
+
+export type InvoiceDtoPagedResult = PagedResult<InvoiceDto>;
+
+export interface RegisterPaymentRequest {
+    amountPaid: number;
+}
+
+// Types for Policies
+export interface CreatePolicyCommand {
+    name: string;
+    description: string;
+    content: string;
+}
+
+export interface UpdatePolicyCommand {
+    id: string;
+    description: string;
+    content: string;
+}
+
+// Types for Quotes
+export enum QuoteStatus {
+    Draft = 1,
+    Sent = 2,
+    Accepted = 3,
+    Rejected = 4,
+    Expired = 5
+}
+
+export interface QuoteLine {
+    itemId: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+}
+
+export interface CreateQuoteCommand {
+    tenantId: string;
+    customerId: string;
+    validUntil: string; // ISO date string
+    lineItems: QuoteLine[];
+}
+
+export interface QuoteLineItemDto {
+    id: string;
+    itemId: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+}
+
+export interface QuoteDto {
+    id: string;
+    tenantId: string;
+    customerId: string;
+    customerName: string;
+    issueDate: string; // ISO date string
+    validUntil: string; // ISO date string
+    status: QuoteStatus;
+    totalAmount: number;
+    lineItems: QuoteLineItemDto[];
+}
+
+export type QuoteDtoPagedResult = PagedResult<QuoteDto>;
+
+
+// Types for Roles
+export interface CreateRoleRequestDto {
+    name: string;
+}
+
+export interface AssignPermissionsToRoleRequestDto {
+    roleId: string;
+    permissionIds: string[];
+}
+
+// Types for Sales Orders
+export enum SalesOrderStatus {
+    Pending = 0,
+    Confirmed = 1,
+    Shipped = 2,
+    Invoiced = 3,
+    Cancelled = 4
+}
+
+export interface CreateSalesOrderFromQuoteRequest {
+    tenantId: string;
+    shippingAddress: Address;
+    billingAddress: Address;
+}
+
+export interface SalesOrderLineItemDto {
+    id: string;
+    itemId: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+}
+
+export interface SalesOrderDto {
+    id: string;
+    tenantId: string;
+    customerId: string;
+    customerName: string;
+    quoteId: string;
+    orderDate: string; // ISO date string
+    status: SalesOrderStatus;
+    totalAmount: number;
+    lineItems: SalesOrderLineItemDto[];
+}
+
+export type SalesOrderDtoPagedResult = PagedResult<SalesOrderDto>;
+
+// Types for Schemas
+export enum DataType {
+    String = 0,
+    Number = 1,
+    Boolean = 2,
+    DateTime = 3,
+    Reference = 4,
+    Object = 5
+}
+
+export interface FieldDefinitionDto {
+    id: string;
+    entitySchemaId: string;
+    name: string;
+    type: DataType;
+    isRequired: boolean;
+    optionsJson?: string;
+    validationRegex?: string;
+    defaultValue?: string;
+}
+
+export interface EntitySchemaDto {
+    id: string;
+    name: string;
+    description: string;
+    fields: FieldDefinitionDto[];
+}
+
+export interface CreateFieldRequestDto {
+    name: string;
+    type: DataType;
+    isRequired: boolean;
+    parentId?: string;
+    optionsJson?: string;
+    validationRegex?: string;
+    defaultValue?: string;
+}
+
+export interface UpdateFieldRequestDto {
+    isRequired?: boolean;
+    optionsJson?: string;
+    validationRegex?: string;
+    defaultValue?: string;
+}
+
+// Types for Tenants
+export interface CreateTenantRequest {
+    name: string;
+}
+
+export interface AssignHomeRegionRequest {
+    homeRegion: string;
+}
+
+// Types for Workflows
+export interface CreateWorkflowRequestDto {
+    name: string;
+    triggerEvent: string;
+    bpmnDefinition: string;
+    isActive: boolean;
+}
+
+export interface UpdateWorkflowRequestDto {
+    name?: string;
+    triggerEvent?: string;
+    bpmnDefinition?: string;
+    isActive?: boolean;
+}
+
+export interface WorkflowDto {
+    id: string;
+    name: string;
+    triggerEvent: string;
+    bpmnDefinition: string;
+    isActive: boolean;
+}
+
+export interface ZeebeVariableDto {
+    name: string;
+    value: any;
+}
+
+export interface ZeebeProcessInstanceDto {
+    id: string;
+    status: string;
+    processDefinitionId: string;
+    variables: ZeebeVariableDto[];
+}
+// --- END: Added types from Swagger.json ---

@@ -77,7 +77,9 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
                 }
                 return acc;
             }, {}))
-            .sort(([,a],[,b]) => b - a).slice(0, 7)
+            // FIX: Refactor sort to be more explicit with array indices to prevent type errors.
+            // FIX: Explicitly cast array values to numbers before subtraction to resolve TypeScript error.
+            .sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, 7)
             .map(([name, quantity]) => ({ name, requisições: quantity })),
 
             peakTimesData: Object.entries(processedMovements.reduce<Record<string, number>>((acc, mov) => {
