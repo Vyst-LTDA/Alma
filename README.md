@@ -1,7 +1,7 @@
 # Alma
 
 <p align="center">
-  <img src="./components/icons/app-icon.jpg" alt="Alma Logo" width="200"/>
+  <img src="https://raw.githubusercontent.com/Vyst-LTDA/Alma/main/components/icons/app-icon.jpg" alt="Alma Logo" width="200"/>
 </p>
 
 <p align="center">
