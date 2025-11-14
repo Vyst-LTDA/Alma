@@ -1,20 +1,16 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+### Alma
 
-# Run and deploy your AI Studio app
+## Sobre
 
-This contains everything you need to run your app locally.
+O Alma é um sistema de gerenciamento de estoque que atua como interface para um sistema de ERP (Enterprise Resource Planning) chamado Storia. O Storia é o backend responsável por processar as chamadas da API e retornar as informações para o Alma.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1JczXOFB3ANvY04HWLKmh3c12nyYOmbEA
+## Run Alma locally
 
-## Run Locally
+**Prerequisites:**
+@@ -23,5 +23,6 @@ View the app in Alma website: https://vyst.com.br/services/alma
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+<p>
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+</p>
