@@ -6,8 +6,10 @@ O Alma é um sistema de gerenciamento de estoque que atua como interface para um
 
 ## Run Alma locally
 
-**Prerequisites:**
-@@ -23,5 +23,6 @@ View the app in Alma website: https://vyst.com.br/services/alma
+**Prerequisites:** Node.js
+
+
+View the app in Alma website: https://vyst.com.br/services/alma
 
 <p>
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
