@@ -289,8 +289,6 @@ export const ERPLogo: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = (pro
 );
 
 
-export const VystLogo: React.FC<IconProps> = (props) => (
-    <svg {...props} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <path fillRule="evenodd" clipRule="evenodd" d="M20.73,6.59l-7.46-4.31a1.5,1.5,0,0,0-1.54,0L4.27,6.59A1.5,1.5,0,0,0,3.5,7.9v8.2a1.5,1.5,0,0,0,.77,1.31l7.46,4.31a1.5,1.5,0,0,0,1.54,0l7.46-4.31a1.5,1.5,0,0,0,.77-1.31V7.9A1.5,1.5,0,0,0,20.73,6.59ZM12,15.5a3.5,3.5,0,1,0,0-7,3.5,3.5,0,0,0,0,7Z"/>
-    </svg>
+export const VystLogo: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = (props) => (
+    <img src="/Vystlogo.png" alt="Vyst Logo" {...props} />
 );
