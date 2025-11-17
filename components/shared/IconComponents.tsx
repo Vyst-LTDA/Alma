@@ -282,6 +282,17 @@ export const PencilIcon: React.FC<IconProps> = (props) => (
     </svg>
 );
 
+export const BeakerIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5v-5.714m0 0a24.298 24.298 0 00-4.5 0m4.5 0a24.298 24.298 0 00-4.5 0M9 10.5h6m-6 4.5h6m-6.75 2.25h9.5m-9.5 0a3.375 3.375 0 01-3.375-3.375V11.25a3.375 3.375 0 013.375-3.375h9.5A3.375 3.375 0 0121 11.25v2.625a3.375 3.375 0 01-3.375 3.375m-9.5 0h9.5" />
+    </svg>
+);
+
+export const ChartBarSquareIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
+  </svg>
+);
 
 // Alma Logo
 export const ERPLogo: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = (props) => (

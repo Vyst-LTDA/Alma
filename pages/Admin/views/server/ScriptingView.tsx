@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FileTextIcon, PlusIcon, TrashIcon } from '../../../../components/shared/IconComponents';
 import ScriptingGuide from '../../components/server/ScriptingGuide';
-import { ScriptDto, HookDto, ScriptLanguage as ScriptLanguageType, CreateScriptCommand, UpdateScriptCommand, UpdateHookCommand } from '../../../../types';
+import { ScriptDto, HookDto, UpdateScriptCommand, UpdateHookCommand } from '../../../../types';
 import { getScripts, getHooks, createScript, createHook, updateScript, deleteHook, deleteScript, updateHook } from '../../../../services/apiService';
 import TestScriptModal from '../../components/server/TestScriptModal';
 
-type Language = 'javascript' | 'python' | 'lua';
+type Language = 'javascript' | 'python';
 
-interface Script extends ScriptDto {
+interface Script {
+    id: string;
+    name: string;
+    content: string;
+    language: Language;
     hook: string;
     hookId?: string;
 }
@@ -15,13 +19,11 @@ interface Script extends ScriptDto {
 const langStringToEnum: Record<Language, number> = {
     javascript: 1,
     python: 2,
-    lua: 3,
 };
 
 const langEnumToString: Record<number, Language> = {
     1: 'javascript',
     2: 'python',
-    3: 'lua',
 };
 
 const ScriptingView: React.FC = () => {
@@ -40,7 +42,7 @@ const ScriptingView: React.FC = () => {
 
             const combinedScripts: Script[] = scriptsData.map(s => ({
                 ...s,
-                language: langEnumToString[s.language as any] || 'javascript', // Assuming language is number from API
+                language: langEnumToString[s.language as any] || 'javascript',
                 hook: hooksMap.get(s.id)?.hookName || 'N/A',
                 hookId: hooksMap.get(s.id)?.id,
             }));
@@ -57,7 +59,7 @@ const ScriptingView: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [activeScriptId]);
 
     useEffect(() => {
         fetchData();
@@ -73,14 +75,17 @@ const ScriptingView: React.FC = () => {
 
         try {
             const isNew = editorState.id.startsWith('new-script-');
+            const langNumber = langStringToEnum[editorState.language];
+            if (langNumber === undefined) {
+                throw new Error("Linguagem de script inválida selecionada.");
+            }
 
             if (isNew) {
-                const createCmd: CreateScriptCommand = {
+                const newScriptId = await createScript({
                     name: editorState.name,
                     content: editorState.content,
-                    language: langStringToEnum[editorState.language as Language],
-                };
-                const newScriptId = await createScript(createCmd);
+                    language: langNumber,
+                });
                 await createHook({ scriptId: newScriptId, hookName: editorState.hook });
             } else { // It's an update
                 const originalScript = scripts.find(s => s.id === editorState.id);
@@ -88,7 +93,7 @@ const ScriptingView: React.FC = () => {
                     id: editorState.id,
                     name: editorState.name,
                     content: editorState.content,
-                    language: langStringToEnum[editorState.language as Language],
+                    language: langNumber,
                 };
                 await updateScript(updateCmd);
 
@@ -148,7 +153,7 @@ const ScriptingView: React.FC = () => {
         }
     };
 
-    const handleEditorChange = (field: keyof Omit<Script, 'id'>, value: string) => {
+    const handleEditorChange = (field: keyof Omit<Script, 'id' | 'hookId'>, value: string) => {
         if (!editorState) return;
         setEditorState(prev => prev ? { ...prev, [field]: value } as Script : null);
     };
@@ -195,7 +200,6 @@ const ScriptingView: React.FC = () => {
                                             <select id="language-select" value={editorState.language} onChange={(e) => handleEditorChange('language', e.target.value)} className="font-semibold bg-gray-50 border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary text-dark-text">
                                                 <option value="javascript">JavaScript</option>
                                                 <option value="python">Python</option>
-                                                <option value="lua">Lua</option>
                                             </select>
                                         </div>
                                         <div>
@@ -237,7 +241,11 @@ const ScriptingView: React.FC = () => {
                     )}
                 </div>
             </div>
-            {editorState && <TestScriptModal isOpen={isTestModalOpen} onClose={() => setIsTestModalOpen(false)} script={editorState} />}
+            {/* FIX: Convert the 'script' prop from type 'Script' to 'ScriptDto' to match the component's expected props. */}
+            {editorState && <TestScriptModal isOpen={isTestModalOpen} onClose={() => setIsTestModalOpen(false)} script={{
+                ...editorState,
+                language: langStringToEnum[editorState.language],
+            }} />}
         </>
     );
 };

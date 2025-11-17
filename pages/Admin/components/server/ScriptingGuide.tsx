@@ -25,7 +25,7 @@ const ScriptingGuide: React.FC<ScriptingGuideProps> = ({ onBack }) => {
                 <p>Este guia fornece uma visão geral de como criar e usar scripts para estender a funcionalidade da plataforma.</p>
 
                 <h3>Visão Geral</h3>
-                <p>A plataforma de scripting permite que você injete lógica de negócios personalizada em pontos específicos do sistema, conhecidos como "hooks". Você pode escrever scripts em JavaScript (ES5), Python ou Lua.</p>
+                <p>A plataforma de scripting permite que você injete lógica de negócios personalizada em pontos específicos do sistema, conhecidos como "hooks". Você pode escrever scripts em JavaScript (ES5) ou Python.</p>
 
                 <h3>Estrutura de um Script</h3>
                 <p>Todo script deve definir uma função chamada <code>handle</code>. Esta função recebe um objeto <code>context</code>, que contém os dados relevantes para o hook em que o script está sendo executado.</p>
@@ -44,14 +44,6 @@ const ScriptingGuide: React.FC<ScriptingGuideProps> = ({ onBack }) => {
     log.info('Script executado com sucesso!')
     return context`}
                 </CodeBlock>
-
-                <CodeBlock language="lua">
-{`function handle(context)
-    -- Sua lógica aqui
-    log:info('Script executado com sucesso!')
-    return context
-end`}
-                </CodeBlock>
                 
                 <h3>A API Global</h3>
                 <p>Todos os scripts têm acesso a um conjunto de funções globais para interagir com o sistema.</p>
@@ -62,7 +54,6 @@ end`}
                     <li><code>log.warn(message)</code>: Registra um aviso.</li>
                     <li><code>log.error(message)</code>: Registra um erro.</li>
                 </ul>
-                <p><em>Nota para Lua: Use a sintaxe de método com dois pontos, por exemplo, <code>log:info('mensagem')</code>.</em></p>
 
                 <h4>HTTP</h4>
                 <p>Você pode fazer chamadas HTTP para domínios pré-aprovados usando o objeto <code>http</code> global.</p>
@@ -127,13 +118,6 @@ end`}
     item = context['context'] # A entidade está aninhada dentro do objeto de contexto principal
     log.info('Item ' + item.Name + ' (ID: ' + str(item.Id) + ') foi criado com sucesso com o SKU: ' + item.Sku)
     return context`}
-                </CodeBlock>
-                 <CodeBlock language="lua">
-{`function handle(context)
-    local item = context.context -- A entidade está aninhada dentro do objeto de contexto principal
-    log:info('Item ' .. item.Name .. ' (ID: ' .. tostring(item.Id) .. ') foi criado com sucesso com o SKU: ' .. item.Sku)
-    return context
-end`}
                 </CodeBlock>
 
                 <h4>Exemplo 3: Buscar dados externos ao criar um item</h4>

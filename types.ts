@@ -250,19 +250,19 @@ export interface UpdateStatusInfo {
     latestVersion?: string;
 }
 
-export type ScriptLanguage = 'javascript' | 'python' | 'lua';
+export type ScriptLanguage = 'javascript' | 'python';
 
 export interface ScriptDto {
     id: string;
     name: string;
     content: string;
-    language: ScriptLanguage; // Assuming the API returns a string representation
+    language: number; // The API sends a number (1: JS, 2: Python)
 }
 
 export interface CreateScriptCommand {
     name: string;
     content: string;
-    language: number; // 1 for JavaScript, 2 for Python, 3 for Lua
+    language: number; // 1 for JavaScript, 2 for Python
 }
 
 export interface UpdateScriptCommand {

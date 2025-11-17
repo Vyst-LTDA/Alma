@@ -44,14 +44,6 @@ const ScriptingGuide: React.FC<ScriptingGuideProps> = ({ onBack }) => {
     log.info('Script executado com sucesso!')
     return context`}
                 </CodeBlock>
-
-                <CodeBlock language="lua">
-{`function handle(context)
-    -- Sua lógica aqui
-    log:info('Script executado com sucesso!')
-    return context
-end`}
-                </CodeBlock>
                 
                 <h3>A API Global</h3>
                 <p>Todos os scripts têm acesso a um conjunto de funções globais para interagir com o sistema.</p>
@@ -127,13 +119,6 @@ end`}
     item = context['context'] # A entidade está aninhada dentro do objeto de contexto principal
     log.info('Item ' + item.Name + ' (ID: ' + str(item.Id) + ') foi criado com sucesso com o SKU: ' + item.Sku)
     return context`}
-                </CodeBlock>
-                 <CodeBlock language="lua">
-{`function handle(context)
-    local item = context.context -- A entidade está aninhada dentro do objeto de contexto principal
-    log:info('Item ' .. item.Name .. ' (ID: ' .. tostring(item.Id) .. ') foi criado com sucesso com o SKU: ' .. item.Sku)
-    return context
-end`}
                 </CodeBlock>
 
                 <h4>Exemplo 3: Buscar dados externos ao criar um item</h4>

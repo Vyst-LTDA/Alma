@@ -57,36 +57,45 @@ const API_BASE_URL = '';
  * @returns A promise that resolves with the JSON data.
  */
 async function handleResponse<T>(response: Response): Promise<T> {
+    // Read the response body as text once, so we can use it for both success and error cases.
+    const text = await response.text();
+
     if (!response.ok) {
-        let errorData;
-        try {
-            errorData = await response.json();
-        } catch (e) {
-            errorData = { message: 'An unknown error occurred and the response was not valid JSON.' };
+        let errorMessage;
+        if (text) {
+            try {
+                // Assume a structured JSON error (like ProblemDetails)
+                const errorData = JSON.parse(text);
+                errorMessage = errorData?.title || errorData?.detail || errorData?.message || `HTTP error! status: ${response.status}`;
+            } catch (e) {
+                // If parsing fails, the error body is not JSON. Use the raw text.
+                // This prevents showing a generic message and reveals the actual server response (e.g., HTML error page snippet).
+                errorMessage = text;
+            }
+        } else {
+            // No error body, just report the status.
+            errorMessage = `HTTP error! status: ${response.status}`;
         }
-        
-        const errorMessage = errorData?.title || errorData?.detail || errorData?.message || `HTTP error! status: ${response.status}`;
         throw new Error(errorMessage);
     }
     
-    const contentType = response.headers.get("content-type");
-    const text = await response.text();
-
-    if (text.length === 0) {
-        return {} as T; // For 204 No Content or other empty bodies
+    // Handle successful but empty responses (e.g., 204 No Content)
+    if (!text) {
+        return {} as T;
     }
 
+    const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
         try {
             return JSON.parse(text) as T;
-        } catch (e) {
-            // If JSON parsing fails but it's a success response, it might just be text
-            return text as T;
+        } catch (e: any) {
+            // The server said it was JSON, but it's not. This is a server-side issue.
+            throw new Error(`Failed to parse JSON response: ${e.message}`);
         }
     }
     
-    // For text/plain responses (like UUIDs from 201 or script IDs from 200)
-    return text as T;
+    // Handle successful non-JSON responses (e.g., plain text IDs)
+    return text as unknown as T;
 }
 
 // --- Items ---
@@ -95,17 +104,17 @@ export const getItems = async (params: { pageNumber?: number, pageSize?: number,
     if (params.pageNumber) query.append('PageNumber', params.pageNumber.toString());
     if (params.pageSize) query.append('PageSize', params.pageSize.toString());
     if (params.searchTerm) query.append('SearchTerm', params.searchTerm);
-    const response = await fetch(`${API_BASE_URL}/api/v1/Items?${query.toString()}`);
+    const response = await fetch(`/api/v1/Items?${query.toString()}`);
     return handleResponse<PagedResult<ItemDto>>(response);
 };
 
 export const getItemById = async (id: string): Promise<ItemDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Items/${id}`);
+    const response = await fetch(`/api/v1/Items/${id}`);
     return handleResponse<ItemDto>(response);
 };
 
 export const createItem = async (itemData: CreateItemRequestDto): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Items`, {
+    const response = await fetch(`/api/v1/Items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(itemData),
@@ -114,7 +123,7 @@ export const createItem = async (itemData: CreateItemRequestDto): Promise<any> =
 };
 
 export const updateItem = async (id: string, itemData: UpdateItemRequestDto): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Items/${id}`, {
+    const response = await fetch(`/api/v1/Items/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(itemData),
@@ -123,7 +132,7 @@ export const updateItem = async (id: string, itemData: UpdateItemRequestDto): Pr
 };
 
 export const deleteItem = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Items/${id}`, {
+    const response = await fetch(`/api/v1/Items/${id}`, {
         method: 'DELETE',
     });
     return handleResponse<void>(response);
@@ -138,17 +147,17 @@ export const getUsers = async (params: { pageNumber?: number, pageSize?: number,
     if (params.searchTerm) query.append('SearchTerm', params.searchTerm);
     if (params.sortBy) query.append('SortBy', params.sortBy);
     if (params.sortOrder) query.append('SortOrder', params.sortOrder);
-    const response = await fetch(`${API_BASE_URL}/api/v1/Users?${query.toString()}`);
+    const response = await fetch(`/api/v1/Users?${query.toString()}`);
     return handleResponse<UserDtoPagedResult>(response);
 };
 
 export const getUserById = async (id: string): Promise<UserDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Users/${id}`);
+    const response = await fetch(`/api/v1/Users/${id}`);
     return handleResponse<UserDto>(response);
 };
 
 export const createUser = async (userData: RegisterUserRequestDto): Promise<UserDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Users`, {
+    const response = await fetch(`/api/v1/Users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
@@ -157,7 +166,7 @@ export const createUser = async (userData: RegisterUserRequestDto): Promise<User
 };
 
 export const updateUser = async (id: string, userData: UpdateUserRequestDto): Promise<UserDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Users/${id}`, {
+    const response = await fetch(`/api/v1/Users/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
@@ -166,14 +175,14 @@ export const updateUser = async (id: string, userData: UpdateUserRequestDto): Pr
 };
 
 export const deleteUser = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Users/${id}`, {
+    const response = await fetch(`/api/v1/Users/${id}`, {
         method: 'DELETE',
     });
     return handleResponse<void>(response);
 };
 
 export const updateCurrentUserProfile = async (profileData: UpdateProfileRequestDto): Promise<UserDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Users/me`, {
+    const response = await fetch(`/api/v1/Users/me`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profileData),
@@ -182,7 +191,7 @@ export const updateCurrentUserProfile = async (profileData: UpdateProfileRequest
 };
 
 export const changeCurrentUserPassword = async (passwordData: ChangePasswordRequestDto): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Users/me/change-password`, {
+    const response = await fetch(`/api/v1/Users/me/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(passwordData),
@@ -196,27 +205,27 @@ export const getMovements = async (params: { pageNumber?: number, pageSize?: num
     if (params.pageNumber) query.append('PageNumber', params.pageNumber.toString());
     if (params.pageSize) query.append('PageSize', params.pageSize.toString());
     if (params.searchTerm) query.append('SearchTerm', params.searchTerm);
-    const response = await fetch(`${API_BASE_URL}/api/v1/Movements?${query.toString()}`);
+    const response = await fetch(`/api/v1/Movements?${query.toString()}`);
     return handleResponse<MovementDtoPagedResult>(response);
 };
 
 export const getMovementById = async (id: string): Promise<MovementDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Movements/${id}`);
+    const response = await fetch(`/api/v1/Movements/${id}`);
     return handleResponse<MovementDto>(response);
 };
 
 export const getMovementsByUser = async (userId: string): Promise<MovementDto[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Movements/by-user/${userId}`);
+    const response = await fetch(`/api/v1/Movements/by-user/${userId}`);
     return handleResponse<MovementDto[]>(response);
 };
 
 export const getMovementsByItemId = async (itemId: string): Promise<MovementDto[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Movements/by-item/${itemId}`);
+    const response = await fetch(`/api/v1/Movements/by-item/${itemId}`);
     return handleResponse<MovementDto[]>(response);
 };
 
 export const createCheckoutMovement = async (movementData: RegisterMovementRequestDto): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Movements/checkout`, {
+    const response = await fetch(`/api/v1/Movements/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(movementData),
@@ -225,7 +234,7 @@ export const createCheckoutMovement = async (movementData: RegisterMovementReque
 };
 
 export const createCheckinMovement = async (movementData: RegisterMovementRequestDto): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Movements/checkin`, {
+    const response = await fetch(`/api/v1/Movements/checkin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(movementData),
@@ -238,17 +247,17 @@ export const getCustomers = async (params: { pageNumber?: number, pageSize?: num
     const query = new URLSearchParams();
     if (params.pageNumber) query.append('pageNumber', params.pageNumber.toString());
     if (params.pageSize) query.append('pageSize', params.pageSize.toString());
-    const response = await fetch(`${API_BASE_URL}/api/v1/Customers?${query.toString()}`);
+    const response = await fetch(`/api/v1/Customers?${query.toString()}`);
     return handleResponse<CustomerDtoPagedResult>(response);
 };
 
 export const searchCustomers = async (term: string): Promise<CustomerDto[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Customers/search?term=${encodeURIComponent(term)}`);
+    const response = await fetch(`/api/v1/Customers/search?term=${encodeURIComponent(term)}`);
     return handleResponse<CustomerDto[]>(response);
 };
 
 export const createCustomer = async (customerData: CreateCustomerCommand): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Customers`, {
+    const response = await fetch(`/api/v1/Customers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(customerData),
@@ -259,28 +268,28 @@ export const createCustomer = async (customerData: CreateCustomerCommand): Promi
 
 // --- System ---
 export const getSystemVersion = async (): Promise<VersionInfo> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/System/version`);
+    const response = await fetch(`/api/v1/System/version`);
     return handleResponse<VersionInfo>(response);
 };
 
 export const getUpdateStatus = async (): Promise<UpdateStatusInfo> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/System/update-status`);
+    const response = await fetch(`/api/v1/System/update-status`);
     return handleResponse<UpdateStatusInfo>(response);
 };
 
 // --- Scripts ---
 export const getScripts = async (): Promise<ScriptDto[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/scripts`);
+    const response = await fetch(`/api/v1/scripts`);
     return handleResponse<ScriptDto[]>(response);
 };
 
 export const getScriptById = async (id: string): Promise<ScriptDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/scripts/${id}`);
+    const response = await fetch(`/api/v1/scripts/${id}`);
     return handleResponse<ScriptDto>(response);
 };
 
 export const createScript = async (scriptData: CreateScriptCommand): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/scripts`, {
+    const response = await fetch(`/api/v1/scripts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(scriptData),
@@ -289,7 +298,7 @@ export const createScript = async (scriptData: CreateScriptCommand): Promise<str
 };
 
 export const updateScript = async (scriptData: UpdateScriptCommand): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/scripts/${scriptData.id}`, {
+    const response = await fetch(`/api/v1/scripts/${scriptData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(scriptData),
@@ -298,12 +307,12 @@ export const updateScript = async (scriptData: UpdateScriptCommand): Promise<voi
 };
 
 export const deleteScript = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/scripts/${id}`, { method: 'DELETE' });
+    const response = await fetch(`/api/v1/scripts/${id}`, { method: 'DELETE' });
     return handleResponse<void>(response);
 };
 
 export const testScript = async (command: TestScriptCommand): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/scripts/test`, {
+    const response = await fetch(`/api/v1/scripts/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -313,17 +322,17 @@ export const testScript = async (command: TestScriptCommand): Promise<any> => {
 
 // --- Hooks ---
 export const getHooks = async (): Promise<HookDto[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/hooks`);
+    const response = await fetch(`/api/v1/hooks`);
     return handleResponse<HookDto[]>(response);
 };
 
 export const getHookById = async (id: string): Promise<HookDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/hooks/${id}`);
+    const response = await fetch(`/api/v1/hooks/${id}`);
     return handleResponse<HookDto>(response);
 };
 
 export const createHook = async (hookData: CreateHookCommand): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/hooks`, {
+    const response = await fetch(`/api/v1/hooks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(hookData),
@@ -332,7 +341,7 @@ export const createHook = async (hookData: CreateHookCommand): Promise<string> =
 };
 
 export const updateHook = async (command: UpdateHookCommand): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/hooks/${command.id}`, {
+    const response = await fetch(`/api/v1/hooks/${command.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -341,23 +350,23 @@ export const updateHook = async (command: UpdateHookCommand): Promise<void> => {
 };
 
 export const deleteHook = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/hooks/${id}`, { method: 'DELETE' });
+    const response = await fetch(`/api/v1/hooks/${id}`, { method: 'DELETE' });
     return handleResponse<void>(response);
 };
 
 // --- Webhooks ---
 export const getWebhooks = async (): Promise<WebhookSubscriptionDto[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/webhooks`);
+    const response = await fetch(`/api/v1/webhooks`);
     return handleResponse<WebhookSubscriptionDto[]>(response);
 };
 
 export const getWebhookById = async (id: string): Promise<WebhookSubscriptionDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/webhooks/${id}`);
+    const response = await fetch(`/api/v1/webhooks/${id}`);
     return handleResponse<WebhookSubscriptionDto>(response);
 };
 
 export const createWebhook = async (webhookData: CreateWebhookSubscriptionCommand): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/webhooks`, {
+    const response = await fetch(`/api/v1/webhooks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(webhookData),
@@ -366,14 +375,14 @@ export const createWebhook = async (webhookData: CreateWebhookSubscriptionComman
 };
 
 export const deleteWebhook = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/webhooks/${id}`, { method: 'DELETE' });
+    const response = await fetch(`/api/v1/webhooks/${id}`, { method: 'DELETE' });
     return handleResponse<void>(response);
 };
 
 // --- API Keys ---
 export const getApiKeys = async (): Promise<ApiKeyDto[]> => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/apikeys`);
+        const response = await fetch(`/api/apikeys`);
         if (response.status === 404) return [];
         return handleResponse<ApiKeyDto[]>(response);
     } catch (e) {
@@ -383,12 +392,12 @@ export const getApiKeys = async (): Promise<ApiKeyDto[]> => {
 };
 
 export const getApiKeyById = async (id: string): Promise<ApiKeyDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/apikeys/${id}`);
+    const response = await fetch(`/api/apikeys/${id}`);
     return handleResponse<ApiKeyDto>(response);
 };
 
 export const createApiKey = async (keyData: CreateApiKeyRequestDto): Promise<ApiKeyCreatedDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/apikeys`, {
+    const response = await fetch(`/api/apikeys`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(keyData),
@@ -397,7 +406,7 @@ export const createApiKey = async (keyData: CreateApiKeyRequestDto): Promise<Api
 };
 
 export const deleteApiKey = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/apikeys/${id}`, {
+    const response = await fetch(`/api/apikeys/${id}`, {
         method: 'DELETE',
     });
     return handleResponse<void>(response);
@@ -407,7 +416,7 @@ export const deleteApiKey = async (id: string): Promise<void> => {
 // --- Losses ---
 export const getLosses = async (): Promise<LossDto[]> => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/losses`);
+        const response = await fetch(`/api/losses`);
         if (response.status === 404) return [];
         return handleResponse<LossDto[]>(response);
     } catch (e) {
@@ -417,12 +426,12 @@ export const getLosses = async (): Promise<LossDto[]> => {
 };
 
 export const getLossById = async (id: string): Promise<LossDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/losses/${id}`);
+    const response = await fetch(`/api/losses/${id}`);
     return handleResponse<LossDto>(response);
 };
 
 export const createLoss = async (lossData: CreateLossDto): Promise<LossDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/losses`, {
+    const response = await fetch(`/api/losses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(lossData),
@@ -431,7 +440,7 @@ export const createLoss = async (lossData: CreateLossDto): Promise<LossDto> => {
 };
 
 export const updateLoss = async (id: string, lossData: UpdateLossDto): Promise<LossDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/losses/${id}`, {
+    const response = await fetch(`/api/losses/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(lossData),
@@ -440,7 +449,7 @@ export const updateLoss = async (id: string, lossData: UpdateLossDto): Promise<L
 };
 
 export const deleteLoss = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/losses/${id}`, {
+    const response = await fetch(`/api/losses/${id}`, {
         method: 'DELETE',
     });
     return handleResponse<void>(response);
@@ -463,24 +472,24 @@ export const getAuditLogs = async (params: {
     if (params.userId) query.append('UserId', params.userId);
     if (params.eventType) query.append('EventType', params.eventType);
     
-    const response = await fetch(`${API_BASE_URL}/api/v1/audit?${query.toString()}`);
+    const response = await fetch(`/api/v1/audit?${query.toString()}`);
     return handleResponse<AuditLogDtoPagedResult>(response);
 };
 
 // --- Admin ---
 export const getAggregateHistory = async (id: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/aggregates/${id}/history`);
+    const response = await fetch(`/api/v1/admin/aggregates/${id}/history`);
     return handleResponse(response);
 };
 
 export const rebuildProjections = async (): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/projections/rebuild`, { method: 'POST' });
+    const response = await fetch(`/api/v1/admin/projections/rebuild`, { method: 'POST' });
     return handleResponse(response);
 };
 
 // --- Attribute Mapping ---
 export const createAttributeMapping = async (command: CreateAttributeMappingCommand): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/attribute-mappings`, {
+    const response = await fetch(`/api/v1/attribute-mappings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -491,13 +500,13 @@ export const createAttributeMapping = async (command: CreateAttributeMappingComm
 
 // --- Dashboard ---
 export const getDashboardMetrics = async (): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/dashboard/metrics`);
+    const response = await fetch(`/api/v1/dashboard/metrics`);
     return handleResponse(response);
 };
 
 // --- Financials ---
 export const createAccount = async (command: CreateAccountCommand): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Financials/accounts`, {
+    const response = await fetch(`/api/v1/Financials/accounts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -507,12 +516,12 @@ export const createAccount = async (command: CreateAccountCommand): Promise<stri
 
 export const getAccounts = async (params: { pageNumber?: number, pageSize?: number }): Promise<AccountDtoPagedResult> => {
     const query = new URLSearchParams(params as any);
-    const response = await fetch(`${API_BASE_URL}/api/v1/Financials/accounts?${query.toString()}`);
+    const response = await fetch(`/api/v1/Financials/accounts?${query.toString()}`);
     return handleResponse(response);
 };
 
 export const createJournalEntry = async (command: CreateJournalEntryCommand): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Financials/journal-entries`, {
+    const response = await fetch(`/api/v1/Financials/journal-entries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -522,14 +531,14 @@ export const createJournalEntry = async (command: CreateJournalEntryCommand): Pr
 
 export const getGeneralLedger = async (params: { pageNumber?: number, pageSize?: number, startDate?: string, endDate?: string, accountId?: string }): Promise<GeneralLedgerEntryDtoPagedResult> => {
     const query = new URLSearchParams(params as any);
-    const response = await fetch(`${API_BASE_URL}/api/v1/Financials/general-ledger?${query.toString()}`);
+    const response = await fetch(`/api/v1/Financials/general-ledger?${query.toString()}`);
     return handleResponse(response);
 };
 
 
 // --- Identity Providers ---
 export const createIdentityProvider = async (command: CreateIdentityProviderCommand): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/identity-providers`, {
+    const response = await fetch(`/api/v1/identity-providers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -538,12 +547,12 @@ export const createIdentityProvider = async (command: CreateIdentityProviderComm
 };
 
 export const getIdentityProviders = async (): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/identity-providers`);
+    const response = await fetch(`/api/v1/identity-providers`);
     return handleResponse(response);
 };
 
 export const updateIdentityProvider = async (id: string, command: UpdateIdentityProviderCommand): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/identity-providers/${id}`, {
+    const response = await fetch(`/api/v1/identity-providers/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -552,19 +561,19 @@ export const updateIdentityProvider = async (id: string, command: UpdateIdentity
 };
 
 export const getIdentityProviderById = async (id: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/identity-providers/${id}`);
+    const response = await fetch(`/api/v1/identity-providers/${id}`);
     return handleResponse(response);
 };
 
 // --- Invoices ---
 export const getInvoices = async (params: { pageNumber?: number, pageSize?: number }): Promise<InvoiceDtoPagedResult> => {
     const query = new URLSearchParams(params as any);
-    const response = await fetch(`${API_BASE_URL}/api/v1/invoices?${query.toString()}`);
+    const response = await fetch(`/api/v1/invoices?${query.toString()}`);
     return handleResponse(response);
 };
 
 export const registerInvoicePayment = async (id: string, request: RegisterPaymentRequest): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/invoices/${id}/register-payment`, {
+    const response = await fetch(`/api/v1/invoices/${id}/register-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -574,7 +583,7 @@ export const registerInvoicePayment = async (id: string, request: RegisterPaymen
 
 // --- Policies ---
 export const createPolicy = async (command: CreatePolicyCommand): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/policies`, {
+    const response = await fetch(`/api/v1/policies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -583,17 +592,17 @@ export const createPolicy = async (command: CreatePolicyCommand): Promise<any> =
 };
 
 export const getPolicies = async (): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/policies`);
+    const response = await fetch(`/api/v1/policies`);
     return handleResponse(response);
 };
 
 export const getPolicyById = async (id: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/policies/${id}`);
+    const response = await fetch(`/api/v1/policies/${id}`);
     return handleResponse(response);
 };
 
 export const updatePolicy = async (id: string, command: UpdatePolicyCommand): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/policies/${id}`, {
+    const response = await fetch(`/api/v1/policies/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -602,18 +611,18 @@ export const updatePolicy = async (id: string, command: UpdatePolicyCommand): Pr
 };
 
 export const deletePolicy = async (id: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/policies/${id}`, { method: 'DELETE' });
+    const response = await fetch(`/api/v1/policies/${id}`, { method: 'DELETE' });
     return handleResponse(response);
 };
 
 export const publishPolicy = async (id: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/policies/${id}/publish`, { method: 'POST' });
+    const response = await fetch(`/api/v1/policies/${id}/publish`, { method: 'POST' });
     return handleResponse(response);
 };
 
 // --- Quotes ---
 export const createQuote = async (command: CreateQuoteCommand): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/sales/quotes`, {
+    const response = await fetch(`/api/v1/sales/quotes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(command),
@@ -623,35 +632,35 @@ export const createQuote = async (command: CreateQuoteCommand): Promise<string> 
 
 export const getQuotes = async (params: { pageNumber?: number, pageSize?: number }): Promise<QuoteDtoPagedResult> => {
     const query = new URLSearchParams(params as any);
-    const response = await fetch(`${API_BASE_URL}/api/v1/sales/quotes?${query.toString()}`);
+    const response = await fetch(`/api/v1/sales/quotes?${query.toString()}`);
     return handleResponse(response);
 };
 
 export const sendQuote = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/sales/quotes/${id}/send`, { method: 'PUT' });
+    const response = await fetch(`/api/v1/sales/quotes/${id}/send`, { method: 'PUT' });
     return handleResponse(response);
 };
 
 export const acceptQuote = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/sales/quotes/${id}/accept`, { method: 'PUT' });
+    const response = await fetch(`/api/v1/sales/quotes/${id}/accept`, { method: 'PUT' });
     return handleResponse(response);
 };
 
 export const rejectQuote = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/sales/quotes/${id}/reject`, { method: 'PUT' });
+    const response = await fetch(`/api/v1/sales/quotes/${id}/reject`, { method: 'PUT' });
     return handleResponse(response);
 };
 
 // --- Reports ---
 export const getSalesAnalyticsReport = async (params: { startDate?: string, endDate?: string }): Promise<any> => {
     const query = new URLSearchParams(params as any);
-    const response = await fetch(`${API_BASE_URL}/api/v1/reports/sales-analytics?${query.toString()}`);
+    const response = await fetch(`/api/v1/reports/sales-analytics?${query.toString()}`);
     return handleResponse(response);
 };
 
 // --- Roles ---
 export const createRole = async (request: CreateRoleRequestDto): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Roles`, {
+    const response = await fetch(`/api/v1/Roles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -660,17 +669,17 @@ export const createRole = async (request: CreateRoleRequestDto): Promise<any> =>
 };
 
 export const getRoles = async (): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Roles`);
+    const response = await fetch(`/api/v1/Roles`);
     return handleResponse(response);
 };
 
 export const getRoleById = async (id: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Roles/${id}`);
+    const response = await fetch(`/api/v1/Roles/${id}`);
     return handleResponse(response);
 };
 
 export const assignPermissionsToRole = async (request: AssignPermissionsToRoleRequestDto): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Roles/assign-permissions`, {
+    const response = await fetch(`/api/v1/Roles/assign-permissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -679,13 +688,13 @@ export const assignPermissionsToRole = async (request: AssignPermissionsToRoleRe
 };
 
 export const getPermissions = async (): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/Roles/permissions`);
+    const response = await fetch(`/api/v1/Roles/permissions`);
     return handleResponse(response);
 };
 
 // --- Sales Orders ---
 export const createSalesOrderFromQuote = async (quoteId: string, request: CreateSalesOrderFromQuoteRequest): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/sales/orders/from-quote/${quoteId}`, {
+    const response = await fetch(`/api/v1/sales/orders/from-quote/${quoteId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -694,24 +703,24 @@ export const createSalesOrderFromQuote = async (quoteId: string, request: Create
 };
 
 export const billSalesOrder = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/sales/orders/${id}/bill`, { method: 'POST' });
+    const response = await fetch(`/api/v1/sales/orders/${id}/bill`, { method: 'POST' });
     return handleResponse(response);
 };
 
 export const getSalesOrders = async (params: { pageNumber?: number, pageSize?: number }): Promise<SalesOrderDtoPagedResult> => {
     const query = new URLSearchParams(params as any);
-    const response = await fetch(`${API_BASE_URL}/api/v1/sales/orders?${query.toString()}`);
+    const response = await fetch(`/api/v1/sales/orders?${query.toString()}`);
     return handleResponse(response);
 };
 
 // --- Schemas ---
 export const getEntitySchema = async (entityName: string): Promise<EntitySchemaDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/schemas/${entityName}`);
+    const response = await fetch(`/api/v1/schemas/${entityName}`);
     return handleResponse(response);
 };
 
 export const createSchemaField = async (entityName: string, request: CreateFieldRequestDto): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/schemas/${entityName}/fields`, {
+    const response = await fetch(`/api/v1/schemas/${entityName}/fields`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -720,7 +729,7 @@ export const createSchemaField = async (entityName: string, request: CreateField
 };
 
 export const updateSchemaField = async (entityName: string, fieldName: string, request: UpdateFieldRequestDto): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/schemas/${entityName}/fields/${fieldName}`, {
+    const response = await fetch(`/api/v1/schemas/${entityName}/fields/${fieldName}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -729,13 +738,13 @@ export const updateSchemaField = async (entityName: string, fieldName: string, r
 };
 
 export const deleteSchemaField = async (entityName: string, fieldName: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/schemas/${entityName}/fields/${fieldName}`, { method: 'DELETE' });
+    const response = await fetch(`/api/v1/schemas/${entityName}/fields/${fieldName}`, { method: 'DELETE' });
     return handleResponse(response);
 };
 
 // --- Tenants ---
 export const createTenant = async (request: CreateTenantRequest): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/Tenants`, {
+    const response = await fetch(`/api/Tenants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -744,12 +753,12 @@ export const createTenant = async (request: CreateTenantRequest): Promise<any> =
 };
 
 export const getTenantById = async (id: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/Tenants/${id}`);
+    const response = await fetch(`/api/Tenants/${id}`);
     return handleResponse(response);
 };
 
 export const assignTenantHomeRegion = async (id: string, request: AssignHomeRegionRequest): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/Tenants/${id}/home-region`, {
+    const response = await fetch(`/api/Tenants/${id}/home-region`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -759,18 +768,18 @@ export const assignTenantHomeRegion = async (id: string, request: AssignHomeRegi
 
 // --- Webhook Deliveries ---
 export const getWebhookDeliveries = async (subscriptionId: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/webhook-deliveries/${subscriptionId}`);
+    const response = await fetch(`/api/v1/webhook-deliveries/${subscriptionId}`);
     return handleResponse(response);
 };
 
 export const redeliverWebhook = async (deliveryId: string): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/webhook-deliveries/${deliveryId}/redeliver`, { method: 'POST' });
+    const response = await fetch(`/api/v1/webhook-deliveries/${deliveryId}/redeliver`, { method: 'POST' });
     return handleResponse(response);
 };
 
 // --- Workflows ---
 export const createWorkflow = async (request: CreateWorkflowRequestDto): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/workflows`, {
+    const response = await fetch(`/api/v1/workflows`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -779,12 +788,12 @@ export const createWorkflow = async (request: CreateWorkflowRequestDto): Promise
 };
 
 export const getWorkflowById = async (id: string): Promise<WorkflowDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/workflows/${id}`);
-    return handleResponse(response);
+    const response = await fetch(`/api/v1/workflows/${id}`);
+    return handleResponse<WorkflowDto>(response);
 };
 
 export const updateWorkflow = async (id: string, request: UpdateWorkflowRequestDto): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/workflows/${id}`, {
+    const response = await fetch(`/api/v1/workflows/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
@@ -793,7 +802,7 @@ export const updateWorkflow = async (id: string, request: UpdateWorkflowRequestD
 };
 
 export const createWorkflowInstance = async (id: string, variables: any): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/workflows/${id}/instances`, {
+    const response = await fetch(`/api/v1/workflows/${id}/instances`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(variables),
@@ -802,6 +811,6 @@ export const createWorkflowInstance = async (id: string, variables: any): Promis
 };
 
 export const getWorkflowInstance = async (instanceId: string): Promise<ZeebeProcessInstanceDto> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/workflows/instances/${instanceId}`);
-    return handleResponse(response);
+    const response = await fetch(`/api/v1/workflows/instances/${instanceId}`);
+    return handleResponse<ZeebeProcessInstanceDto>(response);
 };

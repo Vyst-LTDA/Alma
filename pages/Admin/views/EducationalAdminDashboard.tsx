@@ -13,13 +13,12 @@ import AccountView from '../../Account/AccountView';
 import AnalyticsView from '../../Warehouse/views/AnalyticsView';
 import WarehouseDashboardContent from '../../Warehouse/views/WarehouseDashboardContent';
 import CustomAnalyticsView from './CustomAnalyticsView';
-import CustomersView from '../../Warehouse/views/SuppliersView';
 import LossesView from '../../Warehouse/views/LossesView';
 import StockControlView from '../../Warehouse/views/StockControlView';
 import RequestsManagementTable from '../../Warehouse/components/RequestsManagementTable';
-import { DashboardIcon, ChartBarIcon, MailIcon, FileTextIcon, ArchiveIcon, TruckIcon, ExclamationTriangleIcon, UsersIcon } from '../../../components/shared/IconComponents';
+import PowerBIView from '../../Warehouse/views/EducationalStockControlView';
+import { DashboardIcon, ChartBarIcon, MailIcon, FileTextIcon, ArchiveIcon, ExclamationTriangleIcon, UsersIcon, ChartBarSquareIcon } from '../../../components/shared/IconComponents';
 import UserManagementView from './UserManagementView';
-import CreateUserView from './CreateUserView';
 
 
 interface EducationalAdminDashboardProps {
@@ -35,15 +34,23 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
   
   const [userData] = useState<UserData>({
     id: 'admin-edu-placeholder',
-    name: 'Admin (Educacional)',
+    name: '',
     avatar: '',
-    email: 'admin@instituicao.edu',
-    cpf: '000.000.000-00',
-    linkedin: 'vyst-inc'
+    email: '',
+    cpf: '',
+    linkedin: ''
   });
 
   const handleNavigate = (view: string) => {
     setCurrentView(view);
+  };
+
+  const earlyAccessEnabled = typeof window !== 'undefined' && localStorage.getItem('earlyAccess') === 'true';
+
+  const powerBiNavItem: NavItemType = { 
+      name: 'Power BI', 
+      icon: ChartBarSquareIcon, 
+      view: 'powerbi' 
   };
 
   const educationalNavItems: NavItemType[] = [
@@ -52,11 +59,11 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
     { name: 'Comunicação', icon: MailIcon, view: 'communication' },
     { name: 'Requisições', icon: FileTextIcon, view: 'requests' },
     { name: 'Controle de Estoque', icon: ArchiveIcon, view: 'stock' },
-    { name: 'Clientes', icon: TruckIcon, view: 'customers' },
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
     { name: 'Gerenciar Usuários', icon: UsersIcon, view: 'users' },
-    { name: 'Criar Usuários', icon: UsersIcon, view: 'create-user' },
   ];
+
+  if(earlyAccessEnabled) educationalNavItems.splice(2, 0, powerBiNavItem);
 
   const renderContent = () => {
     switch (currentView) {
@@ -79,14 +86,12 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
         return <CustomAnalyticsView onBack={() => setCurrentView('analytics')} />;
       case 'stock':
         return <StockControlView userRole={userRole} userData={userData} />;
-      case 'customers':
-        return <CustomersView userRole={userRole} />;
       case 'losses':
         return <LossesView userRole="warehouse" />;
       case 'users':
         return <UserManagementView manageableRoles={['warehouse']} />;
-      case 'create-user':
-        return <CreateUserView onUserCreated={() => {}} creatableRoles={['warehouse']} />;
+      case 'powerbi':
+        return <PowerBIView />;
       case 'dashboard':
       default:
         return <WarehouseDashboardContent userRole="warehouse" onNavigate={setCurrentView} userData={userData} />;

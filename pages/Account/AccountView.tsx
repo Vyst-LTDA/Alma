@@ -5,9 +5,10 @@
 */
 import React, { useState } from 'react';
 import { UserData, UserRole } from '../../types';
-import { UserCircleIcon, LockClosedIcon, ArrowUturnLeftIcon } from '../../components/shared/IconComponents';
+import { UserCircleIcon, LockClosedIcon, ArrowUturnLeftIcon, BeakerIcon } from '../../components/shared/IconComponents';
 import ProfileSettings from './components/ProfileSettings';
 import SecuritySettings from './components/SecuritySettings';
+import PreferencesSettings from './components/PreferencesSettings';
 
 interface AccountViewProps {
     userRole: UserRole;
@@ -16,7 +17,7 @@ interface AccountViewProps {
     onNavigate: (view: string) => void;
 }
 
-type AccountTab = 'profile' | 'security';
+type AccountTab = 'profile' | 'security' | 'preferences';
 
 const AccountView: React.FC<AccountViewProps> = ({ userRole, userData, onUpdateUserData, onNavigate }) => {
     const [activeTab, setActiveTab] = useState<AccountTab>('profile');
@@ -40,6 +41,8 @@ const AccountView: React.FC<AccountViewProps> = ({ userRole, userData, onUpdateU
                 return <ProfileSettings userData={userData} onUpdate={onUpdateUserData} />;
             case 'security':
                 return <SecuritySettings />;
+            case 'preferences':
+                return <PreferencesSettings />;
             default:
                 return null;
         }
@@ -59,6 +62,7 @@ const AccountView: React.FC<AccountViewProps> = ({ userRole, userData, onUpdateU
                     <nav className="space-y-2">
                         <NavButton tabName="profile" label="Perfil" icon={UserCircleIcon} />
                         <NavButton tabName="security" label="Alterar senha" icon={LockClosedIcon} />
+                        <NavButton tabName="preferences" label="Preferências" icon={BeakerIcon} />
                     </nav>
                 </aside>
 

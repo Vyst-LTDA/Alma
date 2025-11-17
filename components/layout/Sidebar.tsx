@@ -3,7 +3,6 @@ import { NavItemType, UserRole } from '../../types';
 import { 
     DashboardIcon, 
     PackageIcon,
-    TruckIcon,
     FileTextIcon,
     UsersIcon,
     ArchiveIcon,
@@ -17,7 +16,8 @@ import {
     ExclamationTriangleIcon,
     Cog6ToothIcon,
     ArrowUturnLeftIcon,
-    ClipboardDocumentIcon
+    ClipboardDocumentIcon,
+    ChartBarSquareIcon
 } from '../shared/IconComponents';
 
 const NavItem: React.FC<{ item: NavItemType, currentView: string, onNavigate: (view: string) => void }> = ({ item, currentView, onNavigate }) => {
@@ -47,15 +47,24 @@ interface SidebarProps {
     onToggleEducationalMode?: () => void;
 }
 
+const earlyAccessEnabled = typeof window !== 'undefined' && localStorage.getItem('earlyAccess') === 'true';
+
+const powerBiNavItem: NavItemType = { 
+    name: 'Power BI', 
+    icon: ChartBarSquareIcon, 
+    view: 'powerbi' 
+};
+
 const professorNavItems: NavItemType[] = [
     { name: 'Painel de Controle', icon: DashboardIcon, view: 'dashboard' },
     { name: 'Análises', icon: ChartBarIcon, view: 'analytics' },
     { name: 'Comunicação', icon: MailIcon, view: 'communication' },
     { name: 'Requisições', icon: FileTextIcon, view: 'requests' },
     { name: 'Controle de Estoque', icon: ArchiveIcon, view: 'stock' },
-    { name: 'Clientes', icon: TruckIcon, view: 'customers' },
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
 ];
+if(earlyAccessEnabled) professorNavItems.splice(2, 0, powerBiNavItem);
+
 
 const warehouseNavItems: NavItemType[] = [
     { name: 'Dashboard', icon: DashboardIcon, view: 'dashboard' },
@@ -63,9 +72,9 @@ const warehouseNavItems: NavItemType[] = [
     { name: 'Comunicação', icon: MailIcon, view: 'communication' },
     { name: 'Requisições', icon: FileTextIcon, view: 'requests' },
     { name: 'Controle de Estoque', icon: ArchiveIcon, view: 'stock' },
-    { name: 'Clientes', icon: TruckIcon, view: 'customers' },
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
 ];
+if(earlyAccessEnabled) warehouseNavItems.splice(2, 0, powerBiNavItem);
 
 const adminNavItems: NavItemType[] = [
     { name: 'Painel de Controle', icon: DashboardIcon, view: 'dashboard' },
@@ -73,13 +82,12 @@ const adminNavItems: NavItemType[] = [
     { name: 'Comunicação', icon: MailIcon, view: 'communication' },
     { name: 'Requisições', icon: FileTextIcon, view: 'requests' },
     { name: 'Controle de Estoque', icon: ArchiveIcon, view: 'stock' },
-    { name: 'Clientes', icon: TruckIcon, view: 'customers' },
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
     { name: 'Gerenciar Usuários', icon: UsersIcon, view: 'users' },
-    { name: 'Criar Usuários', icon: UsersIcon, view: 'create-user' },
     { name: 'Logs de Auditoria', icon: ClipboardDocumentIcon, view: 'audit-log' },
     { name: 'Gerenciar Servidor', icon: Cog6ToothIcon, view: 'server-management' },
 ];
+if(earlyAccessEnabled) adminNavItems.splice(2, 0, powerBiNavItem);
 
 const Sidebar: React.FC<SidebarProps> = ({ userRole, currentView, onNavigate, onOpenAboutModal, navItems: customNavItems, isEducationalMode, onToggleEducationalMode }) => {
     let navItems: NavItemType[];

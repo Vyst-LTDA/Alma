@@ -6,14 +6,15 @@
 import React, { useState } from 'react';
 import { UserRole, RegisterUserRequestDto } from '../../../types';
 import { createUser } from '../../../services/apiService';
-import { EyeIcon, EyeOffIcon, ArrowPathIcon, CheckCircleIcon, UserPlusIcon, InfoIcon } from '../../../components/shared/IconComponents';
+import { EyeIcon, EyeOffIcon, ArrowPathIcon, CheckCircleIcon, UserPlusIcon, InfoIcon, ArrowUturnLeftIcon } from '../../../components/shared/IconComponents';
 
 interface CreateUserViewProps {
   onUserCreated: (notification: any) => void;
   creatableRoles: UserRole[];
+  onBack: () => void;
 }
 
-const CreateUserView: React.FC<CreateUserViewProps> = ({ onUserCreated, creatableRoles }) => {
+const CreateUserView: React.FC<CreateUserViewProps> = ({ onUserCreated, creatableRoles, onBack }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -79,7 +80,12 @@ const CreateUserView: React.FC<CreateUserViewProps> = ({ onUserCreated, creatabl
   if (status === 'sent') {
     return (
         <div>
-            <h2 className="text-2xl font-bold text-dark-text mb-6">Criar Conta de Usuário</h2>
+            <div className="flex items-center gap-4 mb-6">
+                 <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                    <ArrowUturnLeftIcon className="w-6 h-6 text-dark-text" />
+                </button>
+                <h2 className="text-2xl font-bold text-dark-text">Criar Conta de Usuário</h2>
+            </div>
             <div className="bg-light-card p-8 rounded-xl border border-gray-200 text-center">
                 <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-dark-text">Convite Enviado!</h3>
@@ -94,7 +100,12 @@ const CreateUserView: React.FC<CreateUserViewProps> = ({ onUserCreated, creatabl
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-dark-text mb-6">Criar Conta de Usuário</h2>
+      <div className="flex items-center gap-4 mb-6">
+          <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors">
+              <ArrowUturnLeftIcon className="w-6 h-6 text-dark-text" />
+          </button>
+          <h2 className="text-2xl font-bold text-dark-text">Criar Conta de Usuário</h2>
+      </div>
       <div className="bg-light-card p-8 rounded-xl border border-gray-200">
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (

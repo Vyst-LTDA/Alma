@@ -16,9 +16,9 @@ import ProfessorDashboard from './components/ProfessorDashboard';
 import AccountView from '../Account/AccountView';
 import AnalyticsView from '../Warehouse/views/AnalyticsView';
 import StockControlView from '../Warehouse/views/StockControlView';
-import CustomersView from '../Warehouse/views/SuppliersView';
 import LossesView from '../Warehouse/views/LossesView';
 import CustomAnalyticsView from '../Admin/views/CustomAnalyticsView';
+import PowerBIView from '../Warehouse/views/EducationalStockControlView';
 
 interface ProfessorViewProps {
   userRole: UserRole;
@@ -33,11 +33,11 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
   
   const [userData, setUserData] = useState<UserData>({
     id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', // Example UUID for API calls
-    name: 'Ana Pereira',
-    avatar: 'https://i.pravatar.cc/150?u=ana-docente',
-    email: 'ana.pereira@instituicao.edu',
-    cpf: '444.555.666-77',
-    linkedin: 'ana-docente'
+    name: '',
+    avatar: '',
+    email: '',
+    cpf: '',
+    linkedin: ''
   });
 
   const handleUpdateUserData = (newUserData: Partial<UserData>) => {
@@ -59,10 +59,10 @@ const ProfessorView: React.FC<ProfessorViewProps> = ({ userRole, onLogout }) => 
       case 'stock':
         // FIX: Pass userData prop to satisfy StockControlViewProps requirements.
         return <StockControlView userRole={userRole} userData={userData} />;
-      case 'customers':
-        return <CustomersView userRole={userRole} />;
       case 'losses':
         return <LossesView userRole={userRole} />;
+      case 'powerbi':
+        return <PowerBIView />;
       case 'requests':
         return (
             <>

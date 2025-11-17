@@ -12,12 +12,12 @@ import { PlusIcon } from '../../components/shared/IconComponents';
 import StockControlView from './views/StockControlView';
 import WarehouseDashboardContent from './views/WarehouseDashboardContent';
 import AnalyticsView from './views/AnalyticsView';
-import CustomersView from './views/SuppliersView';
 import LossesView from './views/LossesView';
 import CommunicationView from '../../components/communication/CommunicationView';
 import AccountView from '../Account/AccountView';
 import RequestsManagementTable from './components/RequestsManagementTable';
 import AddStockEntryModal from './components/AddStockEntryModal';
+import PowerBIView from './views/EducationalStockControlView';
 
 interface DashboardProps {
   userRole: UserRole;
@@ -32,11 +32,11 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
 
   const [userData, setUserData] = useState<UserData>({
     id: 'b2d1f8a0-5b3a-4c9c-8f9d-1b2c3d4e5f6a', // Example UUID for API calls
-    name: 'Almoxarifado',
-    avatar: 'https://i.pravatar.cc/150?u=almoxarifado-staff',
-    email: 'almoxarifado@instituicao.edu',
-    cpf: '999.888.777-66',
-    linkedin: 'almoxarifado-staff'
+    name: '',
+    avatar: '',
+    email: '',
+    cpf: '',
+    linkedin: ''
   });
 
   const handleUpdateUserData = (newUserData: Partial<UserData>) => {
@@ -71,14 +71,14 @@ const WarehouseDashboard: React.FC<DashboardProps> = ({ userRole, onLogout }) =>
             </div>
           </div>
         );
-      case 'customers':
-        return <CustomersView userRole={userRole} />;
       case 'losses':
         return <LossesView userRole={userRole} />;
       case 'communication':
         return <CommunicationView userRole={userRole} userData={userData} />;
       case 'account':
         return <AccountView userRole={userRole} userData={userData} onUpdateUserData={handleUpdateUserData} onNavigate={setCurrentView} />;
+      case 'powerbi':
+        return <PowerBIView />;
       case 'dashboard':
       default:
         return <WarehouseDashboardContent userRole={userRole} onNavigate={setCurrentView} userData={userData} />;

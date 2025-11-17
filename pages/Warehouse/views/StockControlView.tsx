@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import RegisterItemForm from '../components/RegisterItemForm';
 import StockItemsTable from '../components/StockItemsTable';
 import { PlusIcon, ArchiveIcon, ArrowUturnLeftIcon } from '../../../components/shared/IconComponents';
-// FIX: Removed unused 'Request' type.
 import { UserRole, UserData, ItemDto } from '../../../types';
 import RequestsManagementTable from '../components/RequestsManagementTable';
-// FIX: Removed unused 'allRequests' import which was causing an error.
 import AddStockEntryModal from '../components/AddStockEntryModal';
 
 
@@ -17,12 +15,7 @@ interface StockEntriesViewProps {
 }
 
 const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack, userData }) => {
-    const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
-
-    const handleEntryAdded = () => {
-        setRefreshKey(prev => prev + 1);
-    };
 
     return (
         <div className="h-full flex flex-col">
@@ -33,13 +26,6 @@ const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack, u
                     </button>
                     <h2 className="text-2xl font-bold text-dark-text">Histórico de Entradas no Estoque</h2>
                 </div>
-                <button 
-                    onClick={() => setIsAddEntryModalOpen(true)}
-                    className="flex items-center bg-primary text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-primary/90 transition-all"
-                >
-                    <PlusIcon className="w-5 h-5 mr-2" />
-                    Adicionar Entrada
-                </button>
             </div>
             
             <div className="flex-grow mt-4">
@@ -48,14 +34,6 @@ const StockEntriesView: React.FC<StockEntriesViewProps> = ({ userRole, onBack, u
                     movementType="CheckIn"
                 />
             </div>
-            
-            <AddStockEntryModal 
-                isOpen={isAddEntryModalOpen} 
-                onClose={() => setIsAddEntryModalOpen(false)}
-                userRole={userRole}
-                onEntryAdded={handleEntryAdded}
-                userData={userData}
-            />
         </div>
     )
 }
@@ -68,6 +46,7 @@ interface StockControlViewProps {
 
 const StockControlView: React.FC<StockControlViewProps> = ({ userRole, userData }) => {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<ItemDto | null>(null);
     const [currentSubView, setCurrentSubView] = useState<'main' | 'entries'>('main');
     const [refreshKey, setRefreshKey] = useState(0);
@@ -78,6 +57,11 @@ const StockControlView: React.FC<StockControlViewProps> = ({ userRole, userData 
     
     const handleItemRegistered = () => {
       setRefreshKey(prev => prev + 1);
+    };
+
+    const handleEntryAdded = () => {
+      setRefreshKey(prev => prev + 1);
+      setIsAddEntryModalOpen(false);
     };
 
     const handleOpenEditModal = (item: ItemDto) => {
@@ -96,9 +80,18 @@ const StockControlView: React.FC<StockControlViewProps> = ({ userRole, userData 
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-dark-text">Controle de Estoque</h2>
                 <div className="flex gap-4">
+                    {(userRole === 'warehouse' || userRole === 'admin') && (
+                        <button 
+                            onClick={() => setIsAddEntryModalOpen(true)}
+                            className="flex items-center bg-primary text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-primary/90 transition-all"
+                        >
+                            <PlusIcon className="w-5 h-5 mr-2" />
+                            Adicionar Entrada
+                        </button>
+                    )}
                     <button 
                         onClick={() => setCurrentSubView('entries')}
-                        className="flex items-center bg-green-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition-all"
+                        className="flex items-center bg-gray-100 text-dark-text font-semibold px-4 py-2 rounded-lg shadow-sm hover:bg-gray-200 transition-all"
                     >
                         <ArchiveIcon className="w-5 h-5 mr-2" />
                         Histórico de Entradas
@@ -106,7 +99,7 @@ const StockControlView: React.FC<StockControlViewProps> = ({ userRole, userData 
                     {userRole === 'admin' && (
                         <button 
                             onClick={() => setIsRegisterModalOpen(true)}
-                            className="flex items-center bg-primary text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-primary/90 transition-all"
+                            className="flex items-center bg-secondary text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-secondary/90 transition-all"
                         >
                             <PlusIcon className="w-5 h-5 mr-2" />
                             Registrar Novo Item
@@ -127,6 +120,14 @@ const StockControlView: React.FC<StockControlViewProps> = ({ userRole, userData 
                 itemToEdit={itemToEdit}
               />
             )}
+            
+            <AddStockEntryModal 
+                isOpen={isAddEntryModalOpen} 
+                onClose={() => setIsAddEntryModalOpen(false)}
+                userRole={userRole}
+                onEntryAdded={handleEntryAdded}
+                userData={userData}
+            />
         </div>
     );
 }
