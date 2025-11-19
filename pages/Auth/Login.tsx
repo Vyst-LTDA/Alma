@@ -15,6 +15,38 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+    
+    // Form State
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setIsLoading(true);
+
+        // Simulating API delay
+        setTimeout(() => {
+            // Mock Authentication Logic
+            if (password === '123456') {
+                if (email === 'admin@alma.sys') {
+                    onLogin('admin');
+                } else if (email === 'almox@alma.sys') {
+                    onLogin('warehouse');
+                } else if (email === 'docente@alma.sys') {
+                    onLogin('professor');
+                } else {
+                    setError('Usuário não encontrado.');
+                    setIsLoading(false);
+                }
+            } else {
+                setError('Credenciais inválidas. Tente novamente.');
+                setIsLoading(false);
+            }
+        }, 800);
+    };
 
     return (
         <>
@@ -29,10 +61,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     <div className="text-center">
                         <ERPLogo className="w-16 h-16 mx-auto mb-4 text-white"/>
                         <h1 className="text-3xl font-bold">Bem-vindo(a) ao Alma</h1>
-                        <p className="text-white/80 mt-2">Acesse sua conta para continuar.</p>
+                        <p className="text-white/80 mt-2">Faça login para acessar sua conta.</p>
                     </div>
 
-                    <form className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-white/80 mb-1">
                                 Email Institucional
@@ -44,24 +76,30 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                 <input
                                     type="email"
                                     id="email"
-                                    placeholder="seu.nome@instituicao.edu"
-                                    className="w-full pl-10 pr-3 py-2.5 bg-white/10 border border-white/30 rounded-lg focus:ring-2 focus:ring-white/80 focus:border-white/80 transition placeholder:text-white/60"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="seu.nome@alma.sys"
+                                    className="w-full pl-10 pr-3 py-2.5 bg-white/10 border border-white/30 rounded-lg focus:ring-2 focus:ring-white/80 focus:border-white/80 transition placeholder:text-white/40 text-white outline-none"
+                                    required
                                 />
                             </div>
                         </div>
-                        <div>
+                        <div className="mt-4">
                             <label htmlFor="password"className="block text-sm font-medium text-white/80 mb-1">
                                 Senha
                             </label>
                             <div className="relative">
-                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                                     <LockClosedIcon className="h-5 w-5 text-white/60" />
                                 </span>
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     id="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full pl-10 pr-10 py-2.5 bg-white/10 border border-white/30 rounded-lg focus:ring-2 focus:ring-white/80 focus:border-white/80 transition placeholder:text-white/60"
+                                    className="w-full pl-10 pr-10 py-2.5 bg-white/10 border border-white/30 rounded-lg focus:ring-2 focus:ring-white/80 focus:border-white/80 transition placeholder:text-white/40 text-white outline-none"
+                                    required
                                 />
                                 <button
                                     type="button"
@@ -70,29 +108,31 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                     aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                                 >
                                     {showPassword ? (
-                                        <EyeOffIcon className="h-5 w-5 text-white/60" />
+                                        <EyeOffIcon className="h-5 w-5 text-white/60 hover:text-white transition-colors" />
                                     ) : (
-                                        <EyeIcon className="h-5 w-5 text-white/60" />
+                                        <EyeIcon className="h-5 w-5 text-white/60 hover:text-white transition-colors" />
                                     )}
                                 </button>
                             </div>
                         </div>
-                         <div className="flex items-center justify-between">
-                            <a href="#" className="text-sm text-white/80 hover:underline font-medium">
-                                Esqueceu a senha?
-                            </a>
-                        </div>
+
+                        {error && (
+                            <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-sm p-3 rounded-lg text-center">
+                                {error}
+                            </div>
+                        )}
+
                         <button
                             type="submit"
-                            onClick={(e) => { e.preventDefault(); onLogin('professor'); }}
-                            className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-white/30 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                            disabled={isLoading}
+                            className="w-full bg-white text-primary font-bold text-lg py-3 px-4 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-wait"
                         >
-                            Entrar
+                            {isLoading ? 'Entrando...' : 'Entrar'}
                         </button>
                     </form>
                     
                      {/* Footer link */}
-                    <div className="text-center text-xs text-white/60 pt-4">
+                    <div className="text-center text-xs text-white/60 pt-2 border-t border-white/10 mt-4">
                         <p>
                             Copyright © 2025, Vyst Ltda. &bull;{' '}
                             <button onClick={() => setIsAboutModalOpen(true)} className="hover:text-white hover:underline">

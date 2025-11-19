@@ -5,7 +5,7 @@
 */
 import React, { useMemo, useState, useEffect } from 'react';
 import StatCard from '../components/StatCard';
-import { CubeIcon, BoltIcon, DocumentDuplicateIcon, CircleStackIcon, CheckCircleIcon } from '../../../components/shared/IconComponents';
+import { CubeIcon, BoltIcon, DocumentDuplicateIcon, CircleStackIcon, CheckCircleIcon, ClockIcon, ExclamationTriangleIcon } from '../../../components/shared/IconComponents';
 import { UserRole, UserData, MovementDto, ItemDto } from '../../../types';
 import DynamicChart from '../../../components/shared/DynamicChart';
 import ChartContainer from '../../../components/shared/ChartContainer';
@@ -17,6 +17,24 @@ interface WarehouseDashboardContentProps {
     onNavigate: (view: string) => void;
     userData: UserData;
 }
+
+const parseDateString = (dateString: string | undefined | null): Date | null => {
+    if (!dateString) return null;
+    let date: Date | null = null;
+    
+    // Tenta formato PT-BR dd/mm/yyyy
+    const ptMatch = dateString.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+    if (ptMatch) {
+        date = new Date(Number(ptMatch[3]), Number(ptMatch[2]) - 1, Number(ptMatch[1]));
+    } else {
+        // Tenta ISO ou nativo
+        const d = new Date(dateString);
+        if (!isNaN(d.getTime())) {
+            date = d;
+        }
+    }
+    return (date && !isNaN(date.getTime())) ? date : null;
+};
 
 const WarehouseDashboardContent: React.FC<WarehouseDashboardContentProps> = ({ userRole, onNavigate, userData }) => {
     const [scope, setScope] = useState<'my' | 'general'>('general');
@@ -49,7 +67,18 @@ const WarehouseDashboardContent: React.FC<WarehouseDashboardContentProps> = ({ u
     const { dashboardData, chartsToDisplay } = useMemo(() => {
         if (loading) {
              return {
-                dashboardData: { totalRequests: '...', lowStockItems: '...', fulfillmentRate: '...', activeLoans: '...' },
+                dashboardData: { 
+                    totalRequests: '...', 
+                    lowStockItems: '...', 
+                    fulfillmentRate: '...', 
+                    activeLoans: '...',
+                    // My Scope Data
+                    approvedLastMonth: '...',
+                    pending: '...',
+                    deniedLastMonth: '...',
+                    overdue: '...',
+                    myActiveLoans: '...'
+                },
                 chartsToDisplay: [],
             };
         }
@@ -61,11 +90,52 @@ const WarehouseDashboardContent: React.FC<WarehouseDashboardContentProps> = ({ u
 
         const checkoutMovements = processedMovements.filter(m => m.type === 'CheckOut');
 
-        // KPIs
+        // --- General KPIs ---
         const totalRequests = checkoutMovements.length;
         const lowStockItems = items.filter(item => item.stockQuantity > 0 && item.stockQuantity <= 10).length;
         const fulfillmentRate = '100%'; // All movements from API are considered completed.
-        const activeLoans = checkoutMovements.filter(m => m.observations?.toLowerCase().includes('empréstimo')).length;
+        const generalActiveLoans = checkoutMovements.filter(m => m.observations?.toLowerCase().includes('empréstimo')).length;
+
+        // --- My Info KPIs ---
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const lastMonthDate = new Date();
+        lastMonthDate.setMonth(today.getMonth() - 1);
+        
+        const approvedLastMonth = checkoutMovements.filter(m => {
+            const d = new Date(m.movementDate);
+            return d.getMonth() === lastMonthDate.getMonth() && d.getFullYear() === lastMonthDate.getFullYear();
+        }).length;
+
+        const pending = 0; // Mocked as API returns completed movements
+        const deniedLastMonth = 0; // Mocked
+
+        let overdueCount = 0;
+        let myActiveLoansCount = 0;
+
+        if (scope === 'my') {
+            checkoutMovements.forEach(mov => {
+                const obs = mov.observations || '';
+                if (obs.toLowerCase().includes('empréstimo')) {
+                     const returnDateMatch = obs.match(/Devolução: ([\d/-]+)\./);
+                     const returnDateStr = returnDateMatch ? returnDateMatch[1] : undefined;
+                     const returnDateObj = parseDateString(returnDateStr);
+
+                     if (returnDateObj) {
+                         returnDateObj.setHours(0,0,0,0);
+                         if (returnDateObj >= today) {
+                             myActiveLoansCount++;
+                         } else {
+                             overdueCount++;
+                         }
+                     } else {
+                         // Se não conseguir ler a data, assume ativo
+                         myActiveLoansCount++;
+                     }
+                }
+            });
+        }
 
         // Chart Data Calculation
         const monthlyData = processedMovements.reduce((acc, mov) => {
@@ -93,10 +163,17 @@ const WarehouseDashboardContent: React.FC<WarehouseDashboardContentProps> = ({ u
 
         return {
             dashboardData: {
+                // General
                 totalRequests: String(totalRequests),
                 lowStockItems: String(lowStockItems),
                 fulfillmentRate,
-                activeLoans: String(activeLoans),
+                activeLoans: String(generalActiveLoans),
+                // My Scope
+                approvedLastMonth: String(approvedLastMonth),
+                pending: String(pending),
+                deniedLastMonth: String(deniedLastMonth),
+                overdue: String(overdueCount),
+                myActiveLoans: String(myActiveLoansCount)
             },
             chartsToDisplay: displayCharts,
         };
@@ -107,7 +184,7 @@ const WarehouseDashboardContent: React.FC<WarehouseDashboardContentProps> = ({ u
 
     return (
         <div className="flex flex-col gap-8">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <h2 className="text-2xl font-bold text-dark-text">{title}</h2>
                  {(userRole === 'warehouse' || userRole === 'admin') && (
                     <div className="flex items-center p-1 bg-gray-200 rounded-lg">
@@ -127,35 +204,77 @@ const WarehouseDashboardContent: React.FC<WarehouseDashboardContentProps> = ({ u
                  )}
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard 
-                title="Total de Requisições" 
-                value={dashboardData.totalRequests} 
-                change="" 
-                changeType="neutral" 
-                icon={<DocumentDuplicateIcon className="w-8 h-8 text-primary" />} 
-              />
-              <StatCard 
-                title="Itens em Estoque Baixo" 
-                value={dashboardData.lowStockItems} 
-                change="" 
-                changeType="neutral" 
-                icon={<BoltIcon className="w-8 h-8 text-secondary" />} 
-              />
-              <StatCard 
-                title="Taxa de Atendimento" 
-                value={dashboardData.fulfillmentRate} 
-                change="" 
-                changeType="neutral" 
-                icon={<CheckCircleIcon className="w-8 h-8 text-green-500" />} 
-              />
-              <StatCard 
-                title="Empréstimos Ativos" 
-                value={dashboardData.activeLoans} 
-                change="" 
-                changeType="neutral" 
-                icon={<CircleStackIcon className="w-8 h-8 text-orange-500" />} 
-              />
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${scope === 'my' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-6`}>
+              {scope === 'general' ? (
+                  <>
+                    <StatCard 
+                        title="Total de Requisições" 
+                        value={dashboardData.totalRequests} 
+                        change="" 
+                        changeType="neutral" 
+                        icon={<DocumentDuplicateIcon className="w-8 h-8 text-primary" />} 
+                    />
+                    <StatCard 
+                        title="Itens em Estoque Baixo" 
+                        value={dashboardData.lowStockItems} 
+                        change="" 
+                        changeType="neutral" 
+                        icon={<BoltIcon className="w-8 h-8 text-secondary" />} 
+                    />
+                    <StatCard 
+                        title="Taxa de Atendimento" 
+                        value={dashboardData.fulfillmentRate} 
+                        change="" 
+                        changeType="neutral" 
+                        icon={<CheckCircleIcon className="w-8 h-8 text-green-500" />} 
+                    />
+                    <StatCard 
+                        title="Empréstimos Ativos" 
+                        value={dashboardData.activeLoans} 
+                        change="" 
+                        changeType="neutral" 
+                        icon={<CircleStackIcon className="w-8 h-8 text-orange-500" />} 
+                    />
+                  </>
+              ) : (
+                  <>
+                    <StatCard 
+                        title="Aprovadas (Mês Anterior)" 
+                        value={dashboardData.approvedLastMonth} 
+                        change="" 
+                        changeType="neutral" 
+                        icon={<CheckCircleIcon className="w-8 h-8 text-green-500" />} 
+                    />
+                    <StatCard 
+                        title="Em espera (Atual)" 
+                        value={dashboardData.pending} 
+                        change="" 
+                        changeType="neutral" 
+                        icon={<ClockIcon className="w-8 h-8 text-yellow-500" />} 
+                    />
+                    <StatCard 
+                        title="Negadas (Mês Anterior)" 
+                        value={dashboardData.deniedLastMonth} 
+                        change="" 
+                        changeType="neutral" 
+                        icon={<ExclamationTriangleIcon className="w-8 h-8 text-red-500" />} 
+                    />
+                    <StatCard 
+                        title="Prazos Esgotados" 
+                        value={dashboardData.overdue} 
+                        change="" 
+                        changeType="neutral" 
+                        icon={<ExclamationTriangleIcon className="w-8 h-8 text-orange-600" />} 
+                    />
+                    <StatCard 
+                        title="Empréstimos Ativos" 
+                        value={dashboardData.myActiveLoans} 
+                        change="" 
+                        changeType="neutral" 
+                        icon={<CircleStackIcon className="w-8 h-8 text-blue-500" />} 
+                    />
+                  </>
+              )}
             </div>
 
             <div className="space-y-8">

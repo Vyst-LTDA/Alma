@@ -58,27 +58,24 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
 
         let processedMovements = movements;
         if (userRole === 'warehouse' && scope === 'my' && userData.name) {
-            // Filter movements made by the current warehouse user
             processedMovements = movements.filter(m => m.userFullName === userData.name);
         }
 
         const totalRequests = processedMovements.length;
         const lowStockItems = items.filter(item => item.stockQuantity > 0 && item.stockQuantity <= 10).length;
-        // In the API, a movement is a completed action, so fulfillment is 100% of recorded movements.
-        const fulfillmentRate = totalRequests > 0 ? '100%' : 'N/A';
-        // The API does not have a "pending" status for movements.
-        const kpiData = { totalRequests, pendingRequests: 0, lowStockItems, fulfillmentRate };
+        // Mocking fulfillment rate logic as API only returns completed movements usually
+        const fulfillmentRate = totalRequests > 0 ? '98%' : 'N/A'; 
+        const pendingRequests = 0; // API placeholder
+        
+        const kpiData = { totalRequests, pendingRequests, lowStockItems, fulfillmentRate };
         
         const chartsData = {
-            // FIX: Use generic type argument on reduce to ensure correct type inference for `acc` and sort variables.
              itemPopularityData: Object.entries(processedMovements.reduce<Record<string, number>>((acc, mov) => {
                 if (mov.type === 'CheckOut' && mov.itemName) {
                     acc[mov.itemName] = (acc[mov.itemName] || 0) + mov.quantity;
                 }
                 return acc;
             }, {}))
-            // FIX: Refactor sort to be more explicit with array indices to prevent type errors.
-            // FIX: Explicitly cast array values to numbers before subtraction to resolve TypeScript error.
             .sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, 7)
             .map(([name, quantity]) => ({ name, requisições: quantity })),
 
@@ -91,18 +88,10 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
             .slice(-30),
 
             byCategoryData: Object.entries(processedMovements.reduce<Record<string, number>>((acc, mov) => {
-                // FIX: Cast category to string to use as an index type
                 const category = String(itemCategoryMap.get(mov.itemId) || 'Não categorizado');
                 acc[category] = (acc[category] || 0) + 1;
                 return acc;
             }, {})).map(([name, value]) => ({ name, value })),
-            
-            // Turnover is complex and cannot be calculated from API data. Keep mock.
-            turnoverData: [
-                { name: 'Jan', giro: 1.2 }, { name: 'Fev', giro: 1.5 },
-                { name: 'Mar', giro: 1.4 }, { name: 'Abr', giro: 1.8 },
-                { name: 'Mai', giro: 2.1 }, { name: 'Jun', giro: 2.5 },
-            ],
         };
 
         return { kpiData, chartsData };
@@ -115,7 +104,6 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
         const { itemPopularityData, peakTimesData, byCategoryData } = analyticsData.chartsData;
         const baseCharts = scope === 'my' ? myAnalyticsCharts : generalAnalyticsCharts;
         
-        // Create new chart configs with live data to avoid mutating the imported mock data.
         return baseCharts.map(chartConfig => {
             const newConfig = {...chartConfig};
             if (chartConfig.id.includes('1')) newConfig.data = byCategoryData;
@@ -128,11 +116,11 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
 
     const title = scope === 'my' ? 'Minhas Análises' : 'Análises e BI';
     const subtitle = scope === 'my'
-        ? 'Explore os dados e métricas de suas atividades no almoxarifado.' 
+        ? 'Explore os dados e métricas de suas atividades.' 
         : 'Explore os dados e métricas do almoxarifado.';
     
     if (loading) {
-        return <div className="flex items-center justify-center h-full">Carregando dados de análise...</div>;
+        return <div className="flex items-center justify-center h-full text-light-text">Carregando dados de análise...</div>;
     }
 
     if (error) {
@@ -141,23 +129,24 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
 
     return (
         <div className="h-full flex flex-col gap-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-0 rounded-none border-none shadow-none">
                 <div>
                     <h2 className="text-2xl font-bold text-dark-text">{title}</h2>
-                    <p className="text-light-text mt-1">{subtitle}</p>
+                    <p className="text-light-text mt-1 text-sm">{subtitle}</p>
                 </div>
-                 <div className="flex items-center gap-4 mt-4 md:mt-0">
+                 <div className="flex flex-wrap items-center gap-4">
                     {!isProfessor && (
-                        <div className="flex items-center p-1 bg-gray-200 rounded-lg">
+                        <div className="flex items-center p-1 bg-gray-100 rounded-lg border border-gray-200">
                             <button 
                                 onClick={() => setScope('general')}
-                                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${scope === 'general' ? 'bg-white text-primary shadow' : 'text-light-text hover:bg-gray-300/50'}`}
+                                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200 ${scope === 'general' ? 'bg-white text-primary shadow-sm' : 'text-light-text hover:text-dark-text'}`}
                             >
                                 Informações Gerais
                             </button>
                             <button 
                                 onClick={() => setScope('my')}
-                                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${scope === 'my' ? 'bg-white text-primary shadow' : 'text-light-text hover:bg-gray-300/50'}`}
+                                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200 ${scope === 'my' ? 'bg-white text-primary shadow-sm' : 'text-light-text hover:text-dark-text'}`}
                             >
                                 Minhas Informações
                             </button>
@@ -166,18 +155,20 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ userRole, userData, onNav
                     {onNavigate && (userRole === 'admin' || userRole === 'professor') && (
                          <button 
                             onClick={() => onNavigate('custom-analytics')}
-                            className="flex items-center bg-primary text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-primary/90 transition-all duration-300 transform hover:scale-105"
+                            className="flex items-center bg-purple-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-purple-800 transition-all duration-300 transform hover:scale-105"
                         >
                             <ChartPieIcon className="w-5 h-5 mr-2" />
-                            Gerar Gráfico
+                            Gerar Gráfico Personalizado
                         </button>
                     )}
                 </div>
             </div>
             
+            {/* KPI Cards */}
             <AnalyticsKPIs kpiData={analyticsData.kpiData} />
 
-            <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-8 overflow-y-auto pr-2 -mr-2">
+            {/* Charts Grid */}
+            <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
                 {chartsToDisplay.map(chart => (
                     <ChartContainer key={chart.id} title={chart.title}>
                         <DynamicChart 
