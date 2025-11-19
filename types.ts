@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2025 Vyst Ltda., Pedro Henrique Gracia & Antônio A. Meloni
+ * All rights reserved.
+ *
+*/
 // Fix: Import React to resolve errors with React types.
 import React from 'react';
 

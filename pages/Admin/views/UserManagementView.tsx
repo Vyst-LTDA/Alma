@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2025 Vyst Ltda., Pedro Henrique Gracia & Antônio A. Meloni
+ * All rights reserved.
+ *
+*/
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { UserDto, UserRole } from '../../../types';
 import { getUsers, deleteUser } from '../../../services/apiService';

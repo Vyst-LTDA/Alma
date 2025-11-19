@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2025 Vyst Ltda., Pedro Henrique Gracia & Antônio A. Meloni
+ * All rights reserved.
+ *
+*/
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { UserRole, Contact, Message, UserData, UserDto } from '../../types';
 import { SearchIcon, PlusIcon, UsersIcon, ChartBarIcon } from '../shared/IconComponents';

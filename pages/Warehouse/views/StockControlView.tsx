@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2025 Vyst Ltda., Pedro Henrique Gracia & Antônio A. Meloni
+ * All rights reserved.
+ *
+*/
 import React, { useState } from 'react';
 import RegisterItemForm from '../components/RegisterItemForm';
 import StockItemsTable from '../components/StockItemsTable';

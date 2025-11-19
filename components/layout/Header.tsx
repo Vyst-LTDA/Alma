@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2025 Vyst Ltda., Pedro Henrique Gracia & Antônio A. Meloni
+ * All rights reserved.
+ *
+*/
 import React, { useState, useEffect, useRef } from 'react';
 import { UserRole, UserData } from '../../types';
 import { SearchIcon, BellIcon, UserCircleIcon } from '../shared/IconComponents';

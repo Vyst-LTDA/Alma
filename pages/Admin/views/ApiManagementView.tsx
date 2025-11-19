@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2025 Vyst Ltda., Pedro Henrique Gracia & Antônio A. Meloni
+ * All rights reserved.
+ *
+*/
 import React, { useState, useEffect } from 'react';
 import ApiStatusCard from '../components/api/ApiStatusCard';
 import ApiKeysCard from '../components/api/ApiKeysCard';

@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2025 Vyst Ltda., Pedro Henrique Gracia & Antônio A. Meloni
+ * All rights reserved.
+ *
+*/
 import React, { useState, useEffect } from 'react';
 // FIX: Replace BellAlertIcon with ExclamationTriangleIcon and import ServerStackIcon and CheckCircleIcon
 import { Cog6ToothIcon, CodeBracketIcon, ExclamationTriangleIcon, ServerStackIcon, ArrowPathIcon, CheckCircleIcon } from '../../../components/shared/IconComponents';
