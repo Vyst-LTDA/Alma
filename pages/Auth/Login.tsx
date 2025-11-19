@@ -5,7 +5,7 @@
 */
 import React, { useState } from 'react';
 import { UserRole } from '../../types';
-import { ERPLogo, MailIcon, LockClosedIcon, EyeIcon, EyeOffIcon } from '../../components/shared/IconComponents';
+import { ERPLogo, MailIcon, LockClosedIcon, EyeIcon, EyeOffIcon, PackageIcon, UserCircleIcon } from '../../components/shared/IconComponents';
 import AboutModal from '../../components/shared/AboutModal';
 
 interface LoginProps {
@@ -131,6 +131,47 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         </button>
                     </form>
                     
+                    {/* Quick Access / Early Access Buttons */}
+                    <div className="mt-6">
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-white/20"></div>
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-2 bg-transparent text-white/60 uppercase text-xs font-bold tracking-wider">Acesso Antecipado</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3 mt-4">
+                            <button 
+                                onClick={() => onLogin('admin')} 
+                                className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 hover:border-white/30 transition-all duration-200 transform hover:scale-105 group"
+                                title="Entrar como Administrador"
+                            >
+                                <LockClosedIcon className="w-6 h-6 text-white/70 group-hover:text-white mb-2 transition-colors" />
+                                <span className="text-xs font-medium text-white/80 group-hover:text-white">Admin</span>
+                            </button>
+
+                            <button 
+                                onClick={() => onLogin('warehouse')} 
+                                className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 hover:border-white/30 transition-all duration-200 transform hover:scale-105 group"
+                                title="Entrar como Almoxarifado"
+                            >
+                                <PackageIcon className="w-6 h-6 text-white/70 group-hover:text-white mb-2 transition-colors" />
+                                <span className="text-xs font-medium text-white/80 group-hover:text-white">Almox.</span>
+                            </button>
+
+                            <button 
+                                onClick={() => onLogin('professor')} 
+                                className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 hover:border-white/30 transition-all duration-200 transform hover:scale-105 group"
+                                title="Entrar como Docente"
+                            >
+                                <UserCircleIcon className="w-6 h-6 text-white/70 group-hover:text-white mb-2 transition-colors" />
+                                <span className="text-xs font-medium text-white/80 group-hover:text-white">Docente</span>
+                            </button>
+                        </div>
+                    </div>
+
                      {/* Footer link */}
                     <div className="text-center text-xs text-white/60 pt-2 border-t border-white/10 mt-4">
                         <p>
