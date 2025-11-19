@@ -23,6 +23,16 @@ const getLoanStatus = (returnDate?: string): LoanStatus => {
         const parts = returnDate.split('-');
         due = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
     }
+
+    // This check prevents crashes from invalid date strings.
+    if (isNaN(due.getTime())) {
+        const fallbackDate = new Date(returnDate); // Try one more time with native parser
+        if (isNaN(fallbackDate.getTime())) {
+           return 'Em Dia'; // Give up and return safe default
+        }
+        due = fallbackDate;
+    }
+
     due.setHours(0, 0, 0, 0);
 
     const diffTime = due.getTime() - today.getTime();

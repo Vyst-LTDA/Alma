@@ -9,6 +9,14 @@ import StatusBadge from '../../../components/shared/StatusBadge';
 import { SearchIcon, DotsVerticalIcon } from '../../../components/shared/IconComponents';
 import { getMovements } from '../../../services/apiService';
 
+const safeFormatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+        return "Data inválida";
+    }
+    return date.toLocaleDateString('pt-BR');
+};
+
 const mapMovementDtoToRequest = (dto: MovementDto): Request => {
     const isCheckOut = dto.type === 'CheckOut';
     return {
@@ -17,7 +25,7 @@ const mapMovementDtoToRequest = (dto: MovementDto): Request => {
         quantity: dto.quantity,
         requester: dto.userFullName || 'N/A',
         status: isCheckOut ? 'Entregue' : 'Aprovado', // Aprovado = CheckIn, Entregue = CheckOut
-        requestDate: new Date(dto.movementDate).toLocaleDateString('pt-BR'),
+        requestDate: safeFormatDate(dto.movementDate),
         type: isCheckOut ? 'Uso Contínuo' : 'Entrada',
         category: 'N/A', // This info isn't in MovementDto
         unit: 'UN' // This info isn't in MovementDto

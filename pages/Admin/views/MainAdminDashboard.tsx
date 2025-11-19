@@ -18,7 +18,6 @@ import CustomAnalyticsView from './CustomAnalyticsView';
 import StockControlView from '../../Warehouse/views/StockControlView';
 import UserManagementView from './UserManagementView';
 import LossesView from '../../Warehouse/views/LossesView';
-import AuditLogView from './AuditLogView';
 import PowerBIView from '../../Warehouse/views/EducationalStockControlView';
 
 interface MainAdminDashboardProps {
@@ -77,8 +76,6 @@ const MainAdminDashboard: React.FC<MainAdminDashboardProps> = ({ userRole, onLog
         return <UserManagementView manageableRoles={['professor', 'admin']} onUserCreated={handleAddNotification} />;
       case 'losses':
         return <LossesView userRole={userRole} />;
-      case 'audit-log':
-        return <AuditLogView />;
       case 'powerbi':
         return <PowerBIView />;
       case 'dashboard':

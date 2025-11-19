@@ -5,8 +5,8 @@
 */
 import React, { useMemo, useState, useEffect } from 'react';
 import StatCard from '../../Warehouse/components/StatCard';
-import { ClockIcon, CheckCircleIcon, FileTextIcon } from '../../../components/shared/IconComponents';
-import { UserData, ChartConfig, MovementDto, ItemDto, Request } from '../../../types';
+import { ClockIcon, CheckCircleIcon, FileTextIcon, ExclamationTriangleIcon, ArchiveIcon, CircleStackIcon } from '../../../components/shared/IconComponents';
+import { UserData, ChartConfig, Request } from '../../../types';
 import DynamicChart from '../../../components/shared/DynamicChart';
 import ChartContainer from '../../../components/shared/ChartContainer';
 import { getMovementsByUser, getItems } from '../../../services/apiService';
@@ -18,11 +18,48 @@ interface ProfessorDashboardProps {
     refreshKey: number;
 }
 
+const parseDateString = (dateString: string | undefined): Date | null => {
+    if (!dateString) return null;
+    let date: Date | null = null;
+    
+    const ptMatch = dateString.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+    if (ptMatch) {
+        date = new Date(Date.UTC(Number(ptMatch[3]), Number(ptMatch[2]) - 1, Number(ptMatch[1])));
+    } else {
+        const isoMatch = dateString.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+        if (isoMatch) {
+            date = new Date(Date.UTC(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3])));
+        } else {
+            const d = new Date(dateString);
+            if (!isNaN(d.getTime())) {
+                date = d;
+            }
+        }
+    }
+    return (date && !isNaN(date.getTime())) ? date : null;
+};
+
+const parseAndFormatDate = (dateString: string | undefined): string | undefined => {
+    if (!dateString) return undefined;
+    const date = parseDateString(dateString);
+    if (date) {
+        return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    }
+    return dateString;
+};
+
+
 const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, userData, refreshKey }) => {
     const [loading, setLoading] = useState(true);
-    const [myData, setMyData] = useState({ pendingRequests: 0, requestsThisMonth: 0 });
+    const [stats, setStats] = useState({
+        approvedLastMonth: 0,
+        pending: 0,
+        deniedLastMonth: 0,
+        overdue: 0,
+        activeLoans: 0
+    });
     const [myCharts, setMyCharts] = useState<ChartConfig[]>([]);
-    const [activeLoans, setActiveLoans] = useState<Request[]>([]);
+    const [activeLoansList, setActiveLoansList] = useState<Request[]>([]);
     
     useEffect(() => {
         const fetchData = async () => {
@@ -34,56 +71,103 @@ const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, u
                     getItems({ pageSize: 1000 })
                 ]);
 
-                const userCheckouts = movements.filter(m => m.type === 'CheckOut');
-
-                const now = new Date();
-                const requestsThisMonth = userCheckouts.filter(m => {
-                    const movementDate = new Date(m.movementDate);
-                    return movementDate.getMonth() === now.getMonth() && movementDate.getFullYear() === now.getFullYear();
-                }).length;
-
-                setMyData({ pendingRequests: 0, requestsThisMonth });
+                // Helpers for dates
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const currentMonth = today.getMonth();
+                const currentYear = today.getFullYear();
+                
+                const lastMonthDate = new Date();
+                lastMonthDate.setMonth(currentMonth - 1);
+                const lastMonth = lastMonthDate.getMonth();
+                const lastMonthYear = lastMonthDate.getFullYear();
 
                 const itemCategoryMap = new Map(itemsResult.items.map(i => [i.id, i.attributes?.category || 'Não categorizado']));
+                const userCheckouts = movements.filter(m => m.type === 'CheckOut');
 
-                const loans = userCheckouts
-                   .map(mov => {
-                       const obs = mov.observations || '';
-                       const isLoan = obs.includes('Tipo: Empréstimo');
-                       if (!isLoan) return null;
+                // 1. Requisições Aprovadas (Último Mês)
+                // Considerando CheckOut como "Aprovado/Entregue"
+                const approvedLastMonth = userCheckouts.filter(m => {
+                    const d = new Date(m.movementDate);
+                    return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+                }).length;
 
-                       const returnDateMatch = obs.match(/Devolução: ([\d-]+)\./);
+                // 2. Requisições em Espera (Dados Atuais)
+                // API limita isso, mas vamos simular ou usar dados se disponíveis. 
+                // Como a API retorna 'movements' (ações concluídas), assumimos 0 ou dados mockados para visualização se não houver endpoint de "Pedidos"
+                const pending = 0; 
+
+                // 3. Requisições Negadas (Último Mês)
+                // Mesma limitação da API de movimentos.
+                const deniedLastMonth = 0;
+
+                // Process Loans for Overdue and Active
+                let overdueCount = 0;
+                let activeLoansCount = 0;
+                const loans: Request[] = [];
+
+                userCheckouts.forEach(mov => {
+                    const obs = mov.observations || '';
+                    const isLoan = obs.includes('Tipo: Empréstimo');
+                    
+                    if (isLoan) {
+                       const returnDateMatch = obs.match(/Devolução: ([\d/-]+)\./);
                        const returnDateStr = returnDateMatch ? returnDateMatch[1] : undefined;
+                       const returnDateObj = parseDateString(returnDateStr);
 
-                       const request: Request = {
-                           id: mov.id,
-                           item: mov.itemName || 'N/A',
-                           quantity: mov.quantity,
-                           requester: mov.userFullName || 'N/A',
-                           status: 'Aprovado',
-                           requestDate: new Date(mov.movementDate).toLocaleDateString('pt-BR'),
-                           type: 'Empréstimo',
-                           category: itemCategoryMap.get(mov.itemId) || 'N/A',
-                           unit: 'UN', // Mock data
-                           returnDate: returnDateStr ? new Date(returnDateStr.replace(/-/g, '\/')).toLocaleDateString('pt-BR') : undefined
-                       };
-                       
-                       if (returnDateStr) {
-                           const today = new Date();
-                           today.setHours(0, 0, 0, 0);
-                           const [year, month, day] = returnDateStr.split('-');
-                           const due = new Date(Number(year), Number(month) - 1, Number(day));
-                           due.setHours(0, 0, 0, 0);
-                           if (due >= today) {
-                               return request;
+                       if (returnDateObj) {
+                           // Remove time part for comparison
+                           returnDateObj.setHours(0,0,0,0);
+
+                           // Active Loan Logic: If return date is today or future
+                           if (returnDateObj >= today) {
+                               activeLoansCount++;
+                               loans.push({
+                                   id: mov.id,
+                                   item: mov.itemName || 'N/A',
+                                   quantity: mov.quantity,
+                                   requester: mov.userFullName || 'N/A',
+                                   status: 'Aprovado',
+                                   requestDate: new Date(mov.movementDate).toLocaleDateString('pt-BR'),
+                                   type: 'Empréstimo',
+                                   category: itemCategoryMap.get(mov.itemId) || 'N/A',
+                                   unit: 'UN',
+                                   returnDate: parseAndFormatDate(returnDateStr)
+                               });
+                           } 
+                           // Overdue Logic: If return date is in the past
+                           else if (returnDateObj < today) {
+                               overdueCount++;
+                               // We can optionally add overdue loans to the table or keep them separate
+                               // For now, let's add them to the table so the user sees what is overdue
+                               loans.push({
+                                   id: mov.id,
+                                   item: mov.itemName || 'N/A',
+                                   quantity: mov.quantity,
+                                   requester: mov.userFullName || 'N/A',
+                                   status: 'Aprovado', // Technical status
+                                   requestDate: new Date(mov.movementDate).toLocaleDateString('pt-BR'),
+                                   type: 'Empréstimo',
+                                   category: itemCategoryMap.get(mov.itemId) || 'N/A',
+                                   unit: 'UN',
+                                   returnDate: parseAndFormatDate(returnDateStr)
+                               });
                            }
                        }
-                       return null;
-                   })
-                   .filter((r): r is Request => r !== null);
-               
-                setActiveLoans(loans);
+                    }
+                });
 
+                setStats({
+                    approvedLastMonth,
+                    pending,
+                    deniedLastMonth,
+                    overdue: overdueCount,
+                    activeLoans: activeLoansCount
+                });
+                
+                setActiveLoansList(loans);
+
+                // Charts Data
                 const monthlyData = userCheckouts.reduce((acc, mov) => {
                     const month = new Date(mov.movementDate).toLocaleString('pt-BR', { month: 'short' });
                     acc[month] = (acc[month] || 0) + 1;
@@ -112,13 +196,11 @@ const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, u
         fetchData();
     }, [userData.id, refreshKey]);
 
-    const title = 'Meu Painel';
-
     return (
         <>
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-dark-text">{title}</h2>
+                    <h2 className="text-2xl font-bold text-dark-text">Dashboard</h2>
                 </div>
                 <div className="flex items-center gap-4">
                     <button 
@@ -126,30 +208,51 @@ const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, u
                       className="flex items-center bg-primary text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-primary/90 transition-all duration-300 transform hover:scale-105"
                     >
                         <FileTextIcon className="w-5 h-5 mr-2" />
-                        Nova Requisição
+                        Requisitar item
                     </button>
                 </div>
             </div>
 
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+            {/* Stat Cards - 5 Requested Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                 <StatCard 
-                    title="Requisições Pendentes" 
-                    value={loading ? '...' : String(myData.pendingRequests)} 
-                    change="" 
-                    changeType="neutral" 
-                    icon={<ClockIcon className="w-8 h-8 text-primary" />} 
-                />
-                <StatCard 
-                    title="Requisições no Mês" 
-                    value={loading ? '...' : String(myData.requestsThisMonth)} 
+                    title="Aprovadas (Mês Anterior)" 
+                    value={loading ? '...' : String(stats.approvedLastMonth)} 
                     change="" 
                     changeType="neutral" 
                     icon={<CheckCircleIcon className="w-8 h-8 text-green-500" />} 
                 />
+                <StatCard 
+                    title="Em espera (Atual)" 
+                    value={loading ? '...' : String(stats.pending)} 
+                    change="" 
+                    changeType="neutral" 
+                    icon={<ClockIcon className="w-8 h-8 text-yellow-500" />} 
+                />
+                <StatCard 
+                    title="Negadas (Mês Anterior)" 
+                    value={loading ? '...' : String(stats.deniedLastMonth)} 
+                    change="" 
+                    changeType="neutral" 
+                    icon={<ExclamationTriangleIcon className="w-8 h-8 text-red-500" />} 
+                />
+                 <StatCard 
+                    title="Prazos Esgotados" 
+                    value={loading ? '...' : String(stats.overdue)} 
+                    change="" 
+                    changeType="neutral" 
+                    icon={<ExclamationTriangleIcon className="w-8 h-8 text-orange-600" />} 
+                />
+                <StatCard 
+                    title="Empréstimos Ativos" 
+                    value={loading ? '...' : String(stats.activeLoans)} 
+                    change="" 
+                    changeType="neutral" 
+                    icon={<CircleStackIcon className="w-8 h-8 text-blue-500" />} 
+                />
             </div>
 
-            {/* Charts */}
+            {/* Charts & Table */}
             <div className="space-y-8">
                 {loading ? (
                     <div className="text-center py-10 text-light-text">Carregando dados...</div>
@@ -168,7 +271,7 @@ const ProfessorDashboard: React.FC<ProfessorDashboardProps> = ({ onNewRequest, u
                             ))}
                         </div>
                         <div className="mt-8">
-                           <ActiveLoansTable loans={activeLoans} />
+                           <ActiveLoansTable loans={activeLoansList} />
                         </div>
                     </>
                 )}

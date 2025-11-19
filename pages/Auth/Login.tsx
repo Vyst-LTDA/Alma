@@ -91,39 +91,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         </button>
                     </form>
                     
-                    <div className="relative flex items-center justify-center my-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-white/30"></div>
-                        </div>
-                        <div className="relative px-2 bg-white/10 backdrop-blur-sm text-sm text-white/80 rounded-full">
-                            Acesso Antecipado
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <button
-                            type="button"
-                            onClick={() => onLogin('professor')}
-                            className="w-full bg-white/20 text-white font-semibold py-2 px-4 rounded-lg hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors duration-200"
-                        >
-                            Docente
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => onLogin('warehouse')}
-                            className="w-full bg-white/20 text-white font-semibold py-2 px-4 rounded-lg hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors duration-200"
-                        >
-                            Almoxarifado
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => onLogin('admin')}
-                            className="w-full bg-white/20 text-white font-semibold py-2 px-4 rounded-lg hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors duration-200"
-                        >
-                            Admin
-                        </button>
-                    </div>
-
                      {/* Footer link */}
                     <div className="text-center text-xs text-white/60 pt-4">
                         <p>

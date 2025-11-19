@@ -45,14 +45,6 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
     setCurrentView(view);
   };
 
-  const earlyAccessEnabled = typeof window !== 'undefined' && localStorage.getItem('earlyAccess') === 'true';
-
-  const powerBiNavItem: NavItemType = { 
-      name: 'Power BI', 
-      icon: ChartBarSquareIcon, 
-      view: 'powerbi' 
-  };
-
   const educationalNavItems: NavItemType[] = [
     { name: 'Painel de Controle', icon: DashboardIcon, view: 'dashboard' },
     { name: 'Análises e BI', icon: ChartBarIcon, view: 'analytics' },
@@ -62,8 +54,6 @@ const EducationalAdminDashboard: React.FC<EducationalAdminDashboardProps> = ({ u
     { name: 'Perdas', icon: ExclamationTriangleIcon, view: 'losses' },
     { name: 'Gerenciar Usuários', icon: UsersIcon, view: 'users' },
   ];
-
-  if(earlyAccessEnabled) educationalNavItems.splice(2, 0, powerBiNavItem);
 
   const renderContent = () => {
     switch (currentView) {
