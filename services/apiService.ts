@@ -68,13 +68,21 @@ async function handleResponse<T>(response: Response): Promise<T> {
                 const errorData = JSON.parse(text);
                 errorMessage = errorData?.title || errorData?.detail || errorData?.message || `HTTP error! status: ${response.status}`;
             } catch (e) {
-                // If parsing fails, the error body is not JSON. Use the raw text.
-                // This prevents showing a generic message and reveals the actual server response (e.g., HTML error page snippet).
-                errorMessage = text;
+                // If parsing fails, the error body is not JSON. 
+                // Check if the response is HTML (e.g. 404 page) to prevent rendering raw HTML as text
+                if (text.trim().startsWith('<')) {
+                    errorMessage = "Não há informações suficientes para preencher a tabela.";
+                } else {
+                    errorMessage = text;
+                }
             }
         } else {
-            // No error body, just report the status.
-            errorMessage = `HTTP error! status: ${response.status}`;
+            // No body, check status code
+            if (response.status === 404) {
+                errorMessage = "Não há informações suficientes para preencher a tabela.";
+            } else {
+                errorMessage = `HTTP error! status: ${response.status}`;
+            }
         }
         throw new Error(errorMessage);
     }

@@ -61,6 +61,7 @@ const RequestsManagementTable: React.FC<RequestsManagementTableProps> = ({ refre
 
                 setRequests(movements);
             } catch (err: any) {
+                setRequests([]);
                 setError(err.message || 'Falha ao carregar movimentos.');
             } finally {
                 setLoading(false);
@@ -109,51 +110,49 @@ const RequestsManagementTable: React.FC<RequestsManagementTableProps> = ({ refre
             </div>
 
             <div className="flex-grow overflow-y-auto">
-                 {loading ? (
-                    <div className="flex items-center justify-center h-full text-light-text">Carregando histórico...</div>
-                ) : error ? (
-                    <div className="flex items-center justify-center h-full text-red-500">{error}</div>
-                ) : (
-                    <table className="w-full text-sm text-left text-dark-text">
-                        <thead className="text-xs text-light-text uppercase bg-gray-50 sticky top-0">
-                            <tr>
-                                <th scope="col" className="px-6 py-3">Código</th>
-                                <th scope="col" className="px-6 py-3">Item</th>
-                                <th scope="col" className="px-6 py-3">Qtd.</th>
-                                <th scope="col" className="px-6 py-3">Solicitante</th>
-                                <th scope="col" className="px-6 py-3">Data</th>
-                                <th scope="col" className="px-6 py-3">Status</th>
-                                <th scope="col" className="px-6 py-3 text-center">Ações</th>
+                <table className="w-full text-sm text-left text-dark-text">
+                    <thead className="text-xs text-light-text uppercase bg-gray-50 sticky top-0">
+                        <tr>
+                            <th scope="col" className="px-6 py-3">Código</th>
+                            <th scope="col" className="px-6 py-3">Item</th>
+                            <th scope="col" className="px-6 py-3">Qtd.</th>
+                            <th scope="col" className="px-6 py-3">Solicitante</th>
+                            <th scope="col" className="px-6 py-3">Data</th>
+                            <th scope="col" className="px-6 py-3">Status</th>
+                            <th scope="col" className="px-6 py-3 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {loading && (
+                            <tr><td colSpan={7} className="text-center py-10 text-light-text">Carregando histórico...</td></tr>
+                        )}
+                        {!loading && error && (
+                            <tr><td colSpan={7} className="text-center py-10 text-red-500">{error}</td></tr>
+                        )}
+                        {!loading && !error && filteredRequests.length === 0 && (
+                            <tr><td colSpan={7} className="text-center py-10 text-light-text">Nenhuma movimentação encontrada com os filtros atuais.</td></tr>
+                        )}
+                        {!loading && !error && filteredRequests.map((req) => (
+                            <tr key={req.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-6 py-4 font-bold text-primary">{req.id}</td>
+                                <td className="px-6 py-4 font-semibold">{req.item}</td>
+                                <td className="px-6 py-4">{req.quantity} {req.unit}</td>
+                                <td className="px-6 py-4 font-medium">{req.requester}</td>
+                                <td className="px-6 py-4 text-xs text-light-text">{req.requestDate}</td>
+                                <td className="px-6 py-4">
+                                    <StatusBadge status={req.status} />
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center justify-center">
+                                        <button className="p-2 rounded-full hover:bg-gray-100">
+                                            <DotsVerticalIcon className="w-5 h-5 text-gray-500" />
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {filteredRequests.map((req) => (
-                                <tr key={req.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-primary">{req.id}</td>
-                                    <td className="px-6 py-4 font-semibold">{req.item}</td>
-                                    <td className="px-6 py-4">{req.quantity} {req.unit}</td>
-                                    <td className="px-6 py-4 font-medium">{req.requester}</td>
-                                    <td className="px-6 py-4 text-xs text-light-text">{req.requestDate}</td>
-                                    <td className="px-6 py-4">
-                                        <StatusBadge status={req.status} />
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center justify-center">
-                                            <button className="p-2 rounded-full hover:bg-gray-100">
-                                                <DotsVerticalIcon className="w-5 h-5 text-gray-500" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-                 {!loading && !error && filteredRequests.length === 0 && (
-                    <div className="text-center py-10 text-light-text">
-                        <p>Nenhuma movimentação encontrada com os filtros atuais.</p>
-                    </div>
-                )}
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
