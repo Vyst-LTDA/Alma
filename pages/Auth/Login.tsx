@@ -5,7 +5,7 @@
 */
 import React, { useState } from 'react';
 import { UserRole } from '../../types';
-import { ERPLogo, MailIcon, LockClosedIcon, EyeIcon, EyeOffIcon, PackageIcon, UserCircleIcon } from '../../components/shared/IconComponents';
+import { ERPLogo, MailIcon, LockClosedIcon, EyeIcon, EyeOffIcon, VystLogo } from '../../components/shared/IconComponents';
 import AboutModal from '../../components/shared/AboutModal';
 
 interface LoginProps {
@@ -71,7 +71,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             </label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <MailIcon className="h-5 w-5 text-white/60" />
+                                    <MailIcon className="h-5 w-5 text-gray-500" />
                                 </span>
                                 <input
                                     type="email"
@@ -79,7 +79,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="seu.nome@alma.sys"
-                                    className="w-full pl-10 pr-3 py-2.5 bg-white/10 border border-white/30 rounded-lg focus:ring-2 focus:ring-white/80 focus:border-white/80 transition placeholder:text-white/40 text-white outline-none"
+                                    className="w-full pl-10 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition placeholder:text-gray-400 text-black outline-none"
                                     required
                                 />
                             </div>
@@ -90,7 +90,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             </label>
                             <div className="relative">
                                     <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <LockClosedIcon className="h-5 w-5 text-white/60" />
+                                    <LockClosedIcon className="h-5 w-5 text-gray-500" />
                                 </span>
                                 <input
                                     type={showPassword ? "text" : "password"}
@@ -98,7 +98,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full pl-10 pr-10 py-2.5 bg-white/10 border border-white/30 rounded-lg focus:ring-2 focus:ring-white/80 focus:border-white/80 transition placeholder:text-white/40 text-white outline-none"
+                                    className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition placeholder:text-gray-400 text-black outline-none"
                                     required
                                 />
                                 <button
@@ -108,9 +108,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                     aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                                 >
                                     {showPassword ? (
-                                        <EyeOffIcon className="h-5 w-5 text-white/60 hover:text-white transition-colors" />
+                                        <EyeOffIcon className="h-5 w-5 text-gray-500 hover:text-gray-700 transition-colors" />
                                     ) : (
-                                        <EyeIcon className="h-5 w-5 text-white/60 hover:text-white transition-colors" />
+                                        <EyeIcon className="h-5 w-5 text-gray-500 hover:text-gray-700 transition-colors" />
                                     )}
                                 </button>
                             </div>
@@ -131,51 +131,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         </button>
                     </form>
                     
-                    {/* Quick Access / Early Access Buttons */}
-                    <div className="mt-6">
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-white/20"></div>
-                            </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="px-2 bg-transparent text-white/60 uppercase text-xs font-bold tracking-wider">Acesso Antecipado</span>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-3 mt-4">
-                            <button 
-                                onClick={() => onLogin('admin')} 
-                                className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 hover:border-white/30 transition-all duration-200 transform hover:scale-105 group"
-                                title="Entrar como Administrador"
-                            >
-                                <LockClosedIcon className="w-6 h-6 text-white/70 group-hover:text-white mb-2 transition-colors" />
-                                <span className="text-xs font-medium text-white/80 group-hover:text-white">Admin</span>
-                            </button>
-
-                            <button 
-                                onClick={() => onLogin('warehouse')} 
-                                className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 hover:border-white/30 transition-all duration-200 transform hover:scale-105 group"
-                                title="Entrar como Almoxarifado"
-                            >
-                                <PackageIcon className="w-6 h-6 text-white/70 group-hover:text-white mb-2 transition-colors" />
-                                <span className="text-xs font-medium text-white/80 group-hover:text-white">Almox.</span>
-                            </button>
-
-                            <button 
-                                onClick={() => onLogin('professor')} 
-                                className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 hover:border-white/30 transition-all duration-200 transform hover:scale-105 group"
-                                title="Entrar como Docente"
-                            >
-                                <UserCircleIcon className="w-6 h-6 text-white/70 group-hover:text-white mb-2 transition-colors" />
-                                <span className="text-xs font-medium text-white/80 group-hover:text-white">Docente</span>
-                            </button>
-                        </div>
-                    </div>
-
                      {/* Footer link */}
-                    <div className="text-center text-xs text-white/60 pt-2 border-t border-white/10 mt-4">
+                    <div className="flex flex-col items-center justify-center text-xs text-white/60 pt-4 border-t border-white/10 mt-6">
+                        <div className="flex items-center gap-2 mb-2">
+                             <VystLogo className="w-5 h-5 opacity-70" />
+                             <span className="font-medium">Vyst Ltda.</span>
+                        </div>
                         <p>
-                            Copyright © 2025, Vyst Ltda. &bull;{' '}
+                            Copyright © 2025 &bull;{' '}
                             <button onClick={() => setIsAboutModalOpen(true)} className="hover:text-white hover:underline">
                                 Sobre o Alma
                             </button>

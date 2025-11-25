@@ -134,11 +134,11 @@ const NewAnnouncementModal: React.FC<{isOpen: boolean, onClose: () => void, onAd
                  <form onSubmit={handleSubmit} className="space-y-4">
                      <div>
                          <label htmlFor="title" className="block text-sm font-medium text-dark-text mb-1">Título</label>
-                         <input type="text" id="title" name="title" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"/>
+                         <input type="text" id="title" name="title" required className="w-full px-3 py-2 bg-white text-black border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"/>
                      </div>
                      <div>
                          <label htmlFor="category" className="block text-sm font-medium text-dark-text mb-1">Categoria</label>
-                         <select id="category" name="category" defaultValue="Normal" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary bg-white">
+                         <select id="category" name="category" defaultValue="Normal" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary bg-white text-black">
                             {(Object.keys(announcementCategories) as AnnouncementCategory[]).map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>
                             ))}
@@ -146,7 +146,7 @@ const NewAnnouncementModal: React.FC<{isOpen: boolean, onClose: () => void, onAd
                      </div>
                      <div>
                          <label htmlFor="content" className="block text-sm font-medium text-dark-text mb-1">Conteúdo</label>
-                         <textarea id="content" name="content" rows={4} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"></textarea>
+                         <textarea id="content" name="content" rows={4} required className="w-full px-3 py-2 bg-white text-black border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"></textarea>
                      </div>
                      <div className="flex justify-end gap-3 pt-4">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-dark-text font-semibold rounded-lg hover:bg-gray-300">Cancelar</button>

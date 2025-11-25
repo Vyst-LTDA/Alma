@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ERPLogo } from './IconComponents';
+import { ERPLogo, VystLogo } from './IconComponents';
 
 const LoadingScreen: React.FC = () => {
     const [progress, setProgress] = useState(0);
@@ -30,9 +30,12 @@ const LoadingScreen: React.FC = () => {
                 </div>
                 <p className="text-white/80 mt-4 text-sm font-medium">Inicializando sistema...</p>
             </div>
-            <p className="absolute bottom-10 text-white/70 text-lg tracking-widest font-sans">
-                by Vyst Ltda.
-            </p>
+            <div className="absolute bottom-10 flex flex-col items-center">
+                 <VystLogo className="w-8 h-8 mb-2 opacity-80" />
+                 <p className="text-white/70 text-lg tracking-widest font-sans">
+                    by Vyst Ltda.
+                </p>
+            </div>
         </div>
     );
 };
