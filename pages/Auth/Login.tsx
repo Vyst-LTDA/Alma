@@ -5,7 +5,7 @@
 */
 import React, { useState } from 'react';
 import { UserRole } from '../../types';
-import { ERPLogo, MailIcon, LockClosedIcon, EyeIcon, EyeOffIcon, VystLogo } from '../../components/shared/IconComponents';
+import { ERPLogo, MailIcon, LockClosedIcon, EyeIcon, EyeOffIcon } from '../../components/shared/IconComponents';
 import AboutModal from '../../components/shared/AboutModal';
 
 interface LoginProps {
@@ -133,10 +133,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     
                      {/* Footer link */}
                     <div className="flex flex-col items-center justify-center text-xs text-white/60 pt-4 border-t border-white/10 mt-6">
-                        <div className="flex items-center gap-2 mb-2">
-                             <VystLogo className="w-5 h-5 opacity-70" />
-                             <span className="font-medium">Vyst Ltda.</span>
-                        </div>
                         <p>
                             Copyright © 2025 &bull;{' '}
                             <button onClick={() => setIsAboutModalOpen(true)} className="hover:text-white hover:underline">
